@@ -3,784 +3,592 @@
 --================================================
 
 CREATE OR REPLACE TRIGGER beforeSaveUserStatus
-BEFORE INSERT OR UPDATE ON UserStatus
+BEFORE INSERT OR UPDATE OR DELETE ON UserStatus
 FOR EACH ROW
 BEGIN
     -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
             'ADOPCION_APP',                 -- pcScheme
             'UserStatus',                   -- pcTableName
             NULL,                           -- pcFieldName
             NULL,                           -- pcOldValue
             NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
+            TO_CHAR(:NEW.id),               -- pcRecordId
+            'New tuple insertion',          -- pcChangeDescription
             USER                            -- pcCreatedBy
         );
     END IF;
     
     -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'UserStatus',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed status name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP',
+                'UserStatus',
+                'name',
+                TO_CHAR(:OLD.name),
+                TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id),
+                'Changed status name',
+                USER
             );
         END IF;
+    END IF;
+
+    -- BLOQUE PARA ELIMINACIONES
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP',                 -- pcScheme
+            'UserStatus',                   -- pcTableName
+            NULL,                           -- pcFieldName
+            NULL,                           -- pcOldValue
+            NULL,                           -- pcNewValue
+            TO_CHAR(:OLD.id),               -- pcRecordId
+            'Tuple deletion',               -- pcChangeDescription
+            USER                            -- pcCreatedBy
+        );
     END IF;
 END beforeSaveUserStatus;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveRole
-BEFORE INSERT OR UPDATE ON "Role"
+BEFORE INSERT OR UPDATE OR DELETE ON "Role"
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'Role',                         -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'Role', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Role',                         -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed role name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Role', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed role name', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Role', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveRole;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveUser
-BEFORE INSERT OR UPDATE ON "User"
+BEFORE INSERT OR UPDATE OR DELETE ON "User"
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'User',                         -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'User', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el id de la persona asociada
         IF UPDATING('idPerson') AND (:OLD.idPerson != :NEW.idPerson) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'User',                         -- pcTableName
-                'idPerson',                         -- pcFieldName
-                TO_CHAR(:OLD.idPerson),             -- pcOldValue
-                TO_CHAR(:NEW.idPerson),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated person',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'User', 'idPerson',
+                TO_CHAR(:OLD.idPerson), TO_CHAR(:NEW.idPerson),
+                TO_CHAR(:NEW.id), 'Changed id of associated person', USER
             );
         END IF;
 
-        -- Verifica si lo que se modifico fue el id del rol asociado
         IF UPDATING('idRole') AND (:OLD.idRole != :NEW.idRole) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'User',                         -- pcTableName
-                'idRole',                         -- pcFieldName
-                TO_CHAR(:OLD.idRole),             -- pcOldValue
-                TO_CHAR(:NEW.idRole),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated role',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'User', 'idRole',
+                TO_CHAR(:OLD.idRole), TO_CHAR(:NEW.idRole),
+                TO_CHAR(:NEW.id), 'Changed id of associated role', USER
             );
         END IF;
 
         IF UPDATING('idUserStatus') AND (:OLD.idUserStatus != :NEW.idUserStatus) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'User',                         -- pcTableName
-                'idUserStatus',                         -- pcFieldName
-                TO_CHAR(:OLD.idUserStatus),             -- pcOldValue
-                TO_CHAR(:NEW.idUserStatus),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated user status',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'User', 'idUserStatus',
+                TO_CHAR(:OLD.idUserStatus), TO_CHAR(:NEW.idUserStatus),
+                TO_CHAR(:NEW.id), 'Changed id of associated user status', USER
             );
         END IF;
 
         IF UPDATING('username') AND (:OLD.username != :NEW.username) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'User',                         -- pcTableName
-                'username',                         -- pcFieldName
-                TO_CHAR(:OLD.username),             -- pcOldValue
-                TO_CHAR(:NEW.username),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed username',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'User', 'username',
+                TO_CHAR(:OLD.username), TO_CHAR(:NEW.username),
+                TO_CHAR(:NEW.id), 'Changed username', USER
             );
         END IF;
 
         IF UPDATING('password') AND (:OLD.password != :NEW.password) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'User',                         -- pcTableName
-                'idPerson',                         -- pcFieldName
-                TO_CHAR(:OLD.password),             -- pcOldValue
-                TO_CHAR(:NEW.password),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed password',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'User', 'password',
+                TO_CHAR(:OLD.password), TO_CHAR(:NEW.password),
+                TO_CHAR(:NEW.id), 'Changed password', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'User', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveUser;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveBlackList
-BEFORE INSERT OR UPDATE ON BlackList
+BEFORE INSERT OR UPDATE OR DELETE ON BlackList
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'BlackList',                         -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'BlackList', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el id de la persona asociada
         IF UPDATING('idPerson') AND (:OLD.idPerson != :NEW.idPerson) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'BlackList',                         -- pcTableName
-                'idPerson',                         -- pcFieldName
-                TO_CHAR(:OLD.idPerson),             -- pcOldValue
-                TO_CHAR(:NEW.idPerson),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated person',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'BlackList', 'idPerson',
+                TO_CHAR(:OLD.idPerson), TO_CHAR(:NEW.idPerson),
+                TO_CHAR(:NEW.id), 'Changed id of associated person', USER
             );
         END IF;
 
-        -- Verifica si lo que se modifico fue el id del rol asociado
         IF UPDATING('blackListDate') AND (:OLD.blackListDate != :NEW.blackListDate) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'BlackList',                         -- pcTableName
-                'blackListDate',                         -- pcFieldName
-                TO_CHAR(:OLD.blackListDate),             -- pcOldValue
-                TO_CHAR(:NEW.blackListDate),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed date when blacklist record was created',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'BlackList', 'blackListDate',
+                TO_CHAR(:OLD.blackListDate), TO_CHAR(:NEW.blackListDate),
+                TO_CHAR(:NEW.id), 'Changed date when blacklist record was created', USER
             );
         END IF;
 
         IF UPDATING('blackListReason') AND (:OLD.blackListReason != :NEW.blackListReason) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'BlackList',                         -- pcTableName
-                'blackListReason',                         -- pcFieldName
-                TO_CHAR(:OLD.blackListReason),             -- pcOldValue
-                TO_CHAR(:NEW.blackListReason),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed reason why blacklist record was created',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'BlackList', 'blackListReason',
+                TO_CHAR(:OLD.blackListReason), TO_CHAR(:NEW.blackListReason),
+                TO_CHAR(:NEW.id), 'Changed reason why blacklist record was created', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'BlackList', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveBlackList;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSavePerson
-BEFORE INSERT OR UPDATE ON Person
+BEFORE INSERT OR UPDATE OR DELETE ON Person
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'Person',                         -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'Person', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
         IF UPDATING('idLocation') AND (:OLD.idLocation != :NEW.idLocation) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Person',                         -- pcTableName
-                'idLocation',                         -- pcFieldName
-                TO_CHAR(:OLD.idLocation),             -- pcOldValue
-                TO_CHAR(:NEW.idLocation),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated location',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Person', 'idLocation',
+                TO_CHAR(:OLD.idLocation), TO_CHAR(:NEW.idLocation),
+                TO_CHAR(:NEW.id), 'Changed id of associated location', USER
             );
         END IF;
 
         IF UPDATING('firstName') AND (:OLD.firstName != :NEW.firstName) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Person',                         -- pcTableName
-                'firstName',                         -- pcFieldName
-                TO_CHAR(:OLD.firstName),             -- pcOldValue
-                TO_CHAR(:NEW.firstName),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed first name info',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Person', 'firstName',
+                TO_CHAR(:OLD.firstName), TO_CHAR(:NEW.firstName),
+                TO_CHAR(:NEW.id), 'Changed first name info', USER
             );
         END IF;
 
         IF UPDATING('middleName') AND (:OLD.middleName != :NEW.middleName) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Person',                         -- pcTableName
-                'middleName',                         -- pcFieldName
-                TO_CHAR(:OLD.middleName),             -- pcOldValue
-                TO_CHAR(:NEW.middleName),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed middle name info',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Person', 'middleName',
+                TO_CHAR(:OLD.middleName), TO_CHAR(:NEW.middleName),
+                TO_CHAR(:NEW.id), 'Changed middle name info', USER
             );
         END IF;
 
         IF UPDATING('firstLastName') AND (:OLD.firstLastName != :NEW.firstLastName) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Person',                         -- pcTableName
-                'firstLastName',                         -- pcFieldName
-                TO_CHAR(:OLD.firstLastName),             -- pcOldValue
-                TO_CHAR(:NEW.firstLastName),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed first last name info',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Person', 'firstLastName',
+                TO_CHAR(:OLD.firstLastName), TO_CHAR(:NEW.firstLastName),
+                TO_CHAR(:NEW.id), 'Changed first last name info', USER
             );
         END IF;
 
         IF UPDATING('secondLastName') AND (:OLD.secondLastName != :NEW.secondLastName) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Person',                         -- pcTableName
-                'secondLastName',                         -- pcFieldName
-                TO_CHAR(:OLD.secondLastName),             -- pcOldValue
-                TO_CHAR(:NEW.secondLastName),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed second last name info',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Person', 'secondLastName',
+                TO_CHAR(:OLD.secondLastName), TO_CHAR(:NEW.secondLastName),
+                TO_CHAR(:NEW.id), 'Changed second last name info', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Person', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSavePerson;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveContactEmail
-BEFORE INSERT OR UPDATE ON ContactEmail
+BEFORE INSERT OR UPDATE OR DELETE ON ContactEmail
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'ContactEmail',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'ContactEmail', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('email') AND (:OLD.email != :NEW.email) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'ContactEmail',                   -- pcTableName
-                'email',                         -- pcFieldName
-                TO_CHAR(:OLD.email),             -- pcOldValue
-                TO_CHAR(:NEW.email),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed email address',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'ContactEmail', 'email',
+                TO_CHAR(:OLD.email), TO_CHAR(:NEW.email),
+                TO_CHAR(:NEW.id), 'Changed email address', USER
             );
         END IF;
 
         IF UPDATING('idPerson') AND (:OLD.idPerson != :NEW.idPerson) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'ContactEmail',                         -- pcTableName
-                'idPerson',                         -- pcFieldName
-                TO_CHAR(:OLD.idPerson),             -- pcOldValue
-                TO_CHAR(:NEW.idPerson),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated person',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'ContactEmail', 'idPerson',
+                TO_CHAR(:OLD.idPerson), TO_CHAR(:NEW.idPerson),
+                TO_CHAR(:NEW.id), 'Changed id of associated person', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'ContactEmail', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveContactEmail;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveContactNumber
-BEFORE INSERT OR UPDATE ON ContactNumber
+BEFORE INSERT OR UPDATE OR DELETE ON ContactNumber
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'ContactNumber',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'ContactNumber', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('phoneNumber') AND (:OLD.phoneNumber != :NEW.phoneNumber) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'ContactNumber',                   -- pcTableName
-                'phoneNumber',                         -- pcFieldName
-                TO_CHAR(:OLD.phoneNumber),             -- pcOldValue
-                TO_CHAR(:NEW.phoneNumber),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed phone number',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'ContactNumber', 'phoneNumber',
+                TO_CHAR(:OLD.phoneNumber), TO_CHAR(:NEW.phoneNumber),
+                TO_CHAR(:NEW.id), 'Changed phone number', USER
             );
         END IF;
 
         IF UPDATING('idPerson') AND (:OLD.idPerson != :NEW.idPerson) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'ContactNumber',                         -- pcTableName
-                'idPerson',                         -- pcFieldName
-                TO_CHAR(:OLD.idPerson),             -- pcOldValue
-                TO_CHAR(:NEW.idPerson),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated person',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'ContactNumber', 'idPerson',
+                TO_CHAR(:OLD.idPerson), TO_CHAR(:NEW.idPerson),
+                TO_CHAR(:NEW.id), 'Changed id of associated person', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'ContactNumber', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveContactNumber;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveCountry
-BEFORE INSERT OR UPDATE ON Country
+BEFORE INSERT OR UPDATE OR DELETE ON Country
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'Country',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'Country', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Country',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed country name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Country', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed country name', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Country', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveCountry;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveProvince
-BEFORE INSERT OR UPDATE ON Province
+BEFORE INSERT OR UPDATE OR DELETE ON Province
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'Province',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'Province', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Province',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed province name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Province', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed province name', USER
             );
         END IF;
 
         IF UPDATING('idCountry') AND (:OLD.idCountry != :NEW.idCountry) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Province',                   -- pcTableName
-                'idCountry',                         -- pcFieldName
-                TO_CHAR(:OLD.idCountry),             -- pcOldValue
-                TO_CHAR(:NEW.idCountry),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated country',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Province', 'idCountry',
+                TO_CHAR(:OLD.idCountry), TO_CHAR(:NEW.idCountry),
+                TO_CHAR(:NEW.id), 'Changed id of associated country', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Province', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveProvince;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveCanton
-BEFORE INSERT OR UPDATE ON Canton
+BEFORE INSERT OR UPDATE OR DELETE ON Canton
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'Canton',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'Canton', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Canton',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed canton name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Canton', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed canton name', USER
             );
         END IF;
 
         IF UPDATING('idProvince') AND (:OLD.idProvince != :NEW.idProvince) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Canton',                   -- pcTableName
-                'idProvince',                         -- pcFieldName
-                TO_CHAR(:OLD.idProvince),             -- pcOldValue
-                TO_CHAR(:NEW.idProvince),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated province',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Canton', 'idProvince',
+                TO_CHAR(:OLD.idProvince), TO_CHAR(:NEW.idProvince),
+                TO_CHAR(:NEW.id), 'Changed id of associated province', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Canton', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveCanton;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveDistrict
-BEFORE INSERT OR UPDATE ON District
+BEFORE INSERT OR UPDATE OR DELETE ON District
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'District',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'District', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'District',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed district name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'District', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed district name', USER
             );
         END IF;
 
         IF UPDATING('idCanton') AND (:OLD.idCanton != :NEW.idCanton) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'District',                   -- pcTableName
-                'idCanton',                         -- pcFieldName
-                TO_CHAR(:OLD.idCanton),             -- pcOldValue
-                TO_CHAR(:NEW.idCanton),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated canton',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'District', 'idCanton',
+                TO_CHAR(:OLD.idCanton), TO_CHAR(:NEW.idCanton),
+                TO_CHAR(:NEW.id), 'Changed id of associated canton', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'District', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveDistrict;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveLocation
-BEFORE INSERT OR UPDATE ON Location
+BEFORE INSERT OR UPDATE OR DELETE ON Location
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'Location',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'Location', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('address') AND (:OLD.address != :NEW.address) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Location',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.address),             -- pcOldValue
-                TO_CHAR(:NEW.address),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed location address',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Location', 'address',
+                TO_CHAR(:OLD.address), TO_CHAR(:NEW.address),
+                TO_CHAR(:NEW.id), 'Changed location address', USER
             );
         END IF;
 
         IF UPDATING('idDistrict') AND (:OLD.idDistrict != :NEW.idDistrict) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Location',                   -- pcTableName
-                'idDistrict',                         -- pcFieldName
-                TO_CHAR(:OLD.idDistrict),             -- pcOldValue
-                TO_CHAR(:NEW.idDistrict),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated district',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Location', 'idDistrict',
+                TO_CHAR(:OLD.idDistrict), TO_CHAR(:NEW.idDistrict),
+                TO_CHAR(:NEW.id), 'Changed id of associated district', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Location', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveLocation;
 /
@@ -790,318 +598,239 @@ END beforeSaveLocation;
 --======================================================================
 
 CREATE OR REPLACE TRIGGER beforeSaveDonationType
-BEFORE INSERT OR UPDATE ON DonationType
+BEFORE INSERT OR UPDATE OR DELETE ON DonationType
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'DonationType',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'DonationType', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'DonationType',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed donation type name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'DonationType', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed donation type name', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'DonationType', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveDonationType;
 /
 
 
 CREATE OR REPLACE TRIGGER beforeSaveCurrencyType
-BEFORE INSERT OR UPDATE ON CurrencyType
+BEFORE INSERT OR UPDATE OR DELETE ON CurrencyType
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'CurrencyType',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'CurrencyType', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'CurrencyType',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed currency type name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'CurrencyType', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed currency type name', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'CurrencyType', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveCurrencyType;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveAnimalWelfareAssociation
-BEFORE INSERT OR UPDATE ON AnimalWelfareAssociation
+BEFORE INSERT OR UPDATE OR DELETE ON AnimalWelfareAssociation
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'AnimalWelfareAssociation',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'AnimalWelfareAssociation', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('name') AND (:OLD.name != :NEW.name) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'AnimalWelfareAssociation',                   -- pcTableName
-                'name',                         -- pcFieldName
-                TO_CHAR(:OLD.name),             -- pcOldValue
-                TO_CHAR(:NEW.name),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed animal welfare association name',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'AnimalWelfareAssociation', 'name',
+                TO_CHAR(:OLD.name), TO_CHAR(:NEW.name),
+                TO_CHAR(:NEW.id), 'Changed animal welfare association name', USER
             );
         END IF;
 
         IF UPDATING('idLocation') AND (:OLD.idLocation != :NEW.idLocation) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'AnimalWelfareAssociation',                   -- pcTableName
-                'idLocation',                         -- pcFieldName
-                TO_CHAR(:OLD.idLocation),             -- pcOldValue
-                TO_CHAR(:NEW.idLocation),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated location',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'AnimalWelfareAssociation', 'idLocation',
+                TO_CHAR(:OLD.idLocation), TO_CHAR(:NEW.idLocation),
+                TO_CHAR(:NEW.id), 'Changed id of associated location', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'AnimalWelfareAssociation', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveAnimalWelfareAssociation;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveDonationDetail
-BEFORE INSERT OR UPDATE ON DonationDetail
+BEFORE INSERT OR UPDATE OR DELETE ON DonationDetail
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'DonationDetail',                   -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.idAnimalWelfareAssociation) || '-' || TO_CHAR(:NEW.idDonation),    -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'DonationDetail', NULL, NULL, NULL,
+            TO_CHAR(:NEW.idAnimalWelfareAssociation) || '-' || TO_CHAR(:NEW.idDonation),
+            'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el nombre
         IF UPDATING('amount') AND (:OLD.amount != :NEW.amount) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'DonationDetail',                   -- pcTableName
-                'amount',                         -- pcFieldName
-                TO_CHAR(:OLD.amount),             -- pcOldValue
-                TO_CHAR(:NEW.amount),             -- pcNewValue
-                TO_CHAR(:NEW.idAnimalWelfareAssociation) || '-' || TO_CHAR(:NEW.idDonation),    -- pcRecordId
-                'Changed donation amount',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'DonationDetail', 'amount',
+                TO_CHAR(:OLD.amount), TO_CHAR(:NEW.amount),
+                TO_CHAR(:NEW.idAnimalWelfareAssociation) || '-' || TO_CHAR(:NEW.idDonation),
+                'Changed donation amount', USER
             );
         END IF;
 
         IF UPDATING('percentage') AND (:OLD.percentage != :NEW.percentage) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'DonationDetail',                   -- pcTableName
-                'amount',                         -- pcFieldName
-                TO_CHAR(:OLD.percentage),             -- pcOldValue
-                TO_CHAR(:NEW.percentage),             -- pcNewValue
-                TO_CHAR(:NEW.idAnimalWelfareAssociation) || '-' || TO_CHAR(:NEW.idDonation),    -- pcRecordId
-                'Changed donation percentage',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'DonationDetail', 'percentage',
+                TO_CHAR(:OLD.percentage), TO_CHAR(:NEW.percentage),
+                TO_CHAR(:NEW.idAnimalWelfareAssociation) || '-' || TO_CHAR(:NEW.idDonation),
+                'Changed donation percentage', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'DonationDetail', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idAnimalWelfareAssociation) || '-' || TO_CHAR(:OLD.idDonation),
+            'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveDonationDetail;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveDonation
-BEFORE INSERT OR UPDATE ON Donation
+BEFORE INSERT OR UPDATE OR DELETE ON Donation
 FOR EACH ROW
 BEGIN
-    -- BLOQUE PARA INSERCIONES
     IF INSERTING THEN
-        -- Registro datos en nueva tabla
         :new.creationDate := SYSDATE;
         :new.createdBy := USER;
 
-        -- Registro global a la bitácora 
-        -- Null en campos que no aplican para un INSERT
         ADOPCION_AUDIT.createLog(
-            'ADOPCION_APP',                 -- pcScheme
-            'Donation',                         -- pcTableName
-            NULL,                           -- pcFieldName
-            NULL,                           -- pcOldValue
-            NULL,                           -- pcNewValue
-            TO_CHAR(:NEW.id),                        -- pcRecordId
-            'New tuple insertion',     -- pcChangeDescription
-            USER                            -- pcCreatedBy
+            'ADOPCION_APP', 'Donation', NULL, NULL, NULL,
+            TO_CHAR(:NEW.id), 'New tuple insertion', USER
         );
     END IF;
     
-    -- BLOQUE PARA ACTUALIZACIONES
     IF UPDATING THEN
-        -- Rastro en la tupla
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
 
-        -- Verifica si lo que se modifico fue el id de la persona asociada
         IF UPDATING('idPerson') AND (:OLD.idPerson != :NEW.idPerson) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Donation',                         -- pcTableName
-                'idPerson',                         -- pcFieldName
-                TO_CHAR(:OLD.idPerson),             -- pcOldValue
-                TO_CHAR(:NEW.idPerson),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated person',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Donation', 'idPerson',
+                TO_CHAR(:OLD.idPerson), TO_CHAR(:NEW.idPerson),
+                TO_CHAR(:NEW.id), 'Changed id of associated person', USER
             );
         END IF;
 
-        -- Verifica si lo que se modifico fue el id del rol asociado
         IF UPDATING('idDonationType') AND (:OLD.idDonationType != :NEW.idDonationType) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Donation',                         -- pcTableName
-                'DonationType',                         -- pcFieldName
-                TO_CHAR(:OLD.idDonationType),             -- pcOldValue
-                TO_CHAR(:NEW.idDonationType),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated donation type',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Donation', 'idDonationType',
+                TO_CHAR(:OLD.idDonationType), TO_CHAR(:NEW.idDonationType),
+                TO_CHAR(:NEW.id), 'Changed id of associated donation type', USER
             );
         END IF;
 
         IF UPDATING('idCurrencyType') AND (:OLD.idCurrencyType != :NEW.idCurrencyType) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Donation',                         -- pcTableName
-                'idCurrencyType',                         -- pcFieldName
-                TO_CHAR(:OLD.idCurrencyType),             -- pcOldValue
-                TO_CHAR(:NEW.idCurrencyType),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated currency type',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Donation', 'idCurrencyType',
+                TO_CHAR(:OLD.idCurrencyType), TO_CHAR(:NEW.idCurrencyType),
+                TO_CHAR(:NEW.id), 'Changed id of associated currency type', USER
             );
         END IF;
 
         IF UPDATING('idReward') AND (:OLD.idReward != :NEW.idReward) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Donation',                         -- pcTableName
-                'idReward',                         -- pcFieldName
-                TO_CHAR(:OLD.idReward),             -- pcOldValue
-                TO_CHAR(:NEW.idReward),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed id of associated reward',   -- pcChangeDescription
-                USER                            -- pcCreatedBy
+                'ADOPCION_APP', 'Donation', 'idReward',
+                TO_CHAR(:OLD.idReward), TO_CHAR(:NEW.idReward),
+                TO_CHAR(:NEW.id), 'Changed id of associated reward', USER
             );
         END IF;
 
         IF UPDATING('donationDate') AND (:OLD.donationDate != :NEW.donationDate) THEN
             ADOPCION_AUDIT.createLog(
-                'ADOPCION_APP',                 -- pcScheme
-                'Donation',                         -- pcTableName
-                'donationDate',                         -- pcFieldName
-                TO_CHAR(:OLD.donationDate),             -- pcOldValue
-                TO_CHAR(:NEW.donationDate),             -- pcNewValue
-                TO_CHAR(:NEW.id),                        -- pcRecordId
-                'Changed password',   -- pcChangeDescription
-                USER
+                'ADOPCION_APP', 'Donation', 'donationDate',
+                TO_CHAR(:OLD.donationDate), TO_CHAR(:NEW.donationDate),
+                TO_CHAR(:NEW.id), 'Changed donation date', USER
             );
         END IF;
     END IF;
-END beforeSaveUser;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Donation', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
+END beforeSaveDonation;
 /
 
 --===================================================
@@ -1109,7 +838,7 @@ END beforeSaveUser;
 --===================================================
 
 CREATE OR REPLACE TRIGGER beforeSaveFosterHomeStatus
-BEFORE INSERT OR UPDATE ON FosterHomeStatus
+BEFORE INSERT OR UPDATE OR DELETE ON FosterHomeStatus
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1134,11 +863,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'FosterHomeStatus', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveFosterHomeStatus;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveFosterHome
-BEFORE INSERT OR UPDATE ON FosterHome
+BEFORE INSERT OR UPDATE OR DELETE ON FosterHome
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1195,11 +932,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'FosterHome', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idFosterHome), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveFosterHome;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveFosterHomeXPetSize
-BEFORE INSERT OR UPDATE ON FosterHome_x_petSize
+BEFORE INSERT OR UPDATE OR DELETE ON FosterHome_x_petSize
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1217,11 +962,20 @@ BEGIN
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'FosterHome_x_petSize', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idFosterHome) || '-' || TO_CHAR(:OLD.idPetSize),
+            'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveFosterHomeXPetSize;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveFosterHomeXPetType
-BEFORE INSERT OR UPDATE ON FosterHome_x_petType
+BEFORE INSERT OR UPDATE OR DELETE ON FosterHome_x_petType
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1239,7 +993,15 @@ BEGIN
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
     END IF;
-END beforeSaveFosterHomeXPetBreed;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'FosterHome_x_petType', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idFosterHome) || '-' || TO_CHAR(:OLD.idPetType),
+            'Tuple deletion', USER
+        );
+    END IF;
+END beforeSaveFosterHomeXPetType;
 /
 
 --================================================
@@ -1247,7 +1009,7 @@ END beforeSaveFosterHomeXPetBreed;
 --================================================
 
 CREATE OR REPLACE TRIGGER beforeSaveHouseType
-BEFORE INSERT OR UPDATE ON HouseType
+BEFORE INSERT OR UPDATE OR DELETE ON HouseType
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1272,11 +1034,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'HouseType', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveHouseType;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveHouse
-BEFORE INSERT OR UPDATE ON House
+BEFORE INSERT OR UPDATE OR DELETE ON House
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1309,11 +1079,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'House', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveHouse;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveExerciseTime
-BEFORE INSERT OR UPDATE ON ExerciseTime
+BEFORE INSERT OR UPDATE OR DELETE ON ExerciseTime
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1338,11 +1116,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'ExerciseTime', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveExerciseTime;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveAdopter
-BEFORE INSERT OR UPDATE ON Adopter
+BEFORE INSERT OR UPDATE OR DELETE ON Adopter
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1375,11 +1161,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Adopter', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idAdopter), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveAdopter;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveOtherPet
-BEFORE INSERT OR UPDATE ON OtherPet
+BEFORE INSERT OR UPDATE OR DELETE ON OtherPet
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1412,11 +1206,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'OtherPet', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveOtherPet;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveAdoption
-BEFORE INSERT OR UPDATE ON Adoption
+BEFORE INSERT OR UPDATE OR DELETE ON Adoption
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1465,11 +1267,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Adoption', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveAdoption;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveFollowUp
-BEFORE INSERT OR UPDATE ON FollowUp
+BEFORE INSERT OR UPDATE OR DELETE ON FollowUp
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1510,11 +1320,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'FollowUp', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveFollowUp;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetOwnerRating
-BEFORE INSERT OR UPDATE ON PetOwnerRating
+BEFORE INSERT OR UPDATE OR DELETE ON PetOwnerRating
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1555,6 +1373,13 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetOwnerRating', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetOwnerRating;
 /
 
@@ -1562,9 +1387,8 @@ END beforeSavePetOwnerRating;
 --==== Triggers tablas relacionadas a Photo ====
 --================================================
 
-
 CREATE OR REPLACE TRIGGER beforeSavePhotoType
-BEFORE INSERT OR UPDATE ON PhotoType
+BEFORE INSERT OR UPDATE OR DELETE ON PhotoType
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1589,11 +1413,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PhotoType', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePhotoType;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePhoto
-BEFORE INSERT OR UPDATE ON Photo
+BEFORE INSERT OR UPDATE OR DELETE ON Photo
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1650,6 +1482,13 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Photo', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePhoto;
 /
 
@@ -1658,7 +1497,7 @@ END beforeSavePhoto;
 --=======================================================
 
 CREATE OR REPLACE TRIGGER beforeSaveVeterinarian
-BEFORE INSERT OR UPDATE ON Veterinarian
+BEFORE INSERT OR UPDATE OR DELETE ON Veterinarian
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1683,11 +1522,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Veterinarian', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveVeterinarian;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveDisease
-BEFORE INSERT OR UPDATE ON Disease
+BEFORE INSERT OR UPDATE OR DELETE ON Disease
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1712,11 +1559,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Disease', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveDisease;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveDiseaseXPet
-BEFORE INSERT OR UPDATE ON Disease_x_pet
+BEFORE INSERT OR UPDATE OR DELETE ON Disease_x_pet
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1734,11 +1589,20 @@ BEGIN
         :new.updatedDate := SYSDATE;
         :new.updatedBy := USER;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Disease_x_pet', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idDisease) || '-' || TO_CHAR(:OLD.idPet),
+            'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveDiseaseXPet;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveTreatment
-BEFORE INSERT OR UPDATE ON Treatment
+BEFORE INSERT OR UPDATE OR DELETE ON Treatment
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1763,11 +1627,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Treatment', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveTreatment;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveTreatmentXDisease
-BEFORE INSERT OR UPDATE ON Treatment_x_disease
+BEFORE INSERT OR UPDATE OR DELETE ON Treatment_x_disease
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1794,11 +1666,20 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Treatment_x_disease', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idDisease) || '-' || TO_CHAR(:OLD.idTreatment),
+            'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveTreatmentXDisease;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveMedication
-BEFORE INSERT OR UPDATE ON Medication
+BEFORE INSERT OR UPDATE OR DELETE ON Medication
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1823,11 +1704,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Medication', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveMedication;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveMedicationXTreatment
-BEFORE INSERT OR UPDATE ON Medication_x_treatment
+BEFORE INSERT OR UPDATE OR DELETE ON Medication_x_treatment
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1854,16 +1743,23 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Medication_x_treatment', NULL, NULL, NULL,
+            TO_CHAR(:OLD.idMedication) || '-' || TO_CHAR(:OLD.idTreatment),
+            'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveMedicationXTreatment;
 /
-
 
 --================================================
 --==== Triggers tablas Pet ====                
 --================================================
 
 CREATE OR REPLACE TRIGGER beforeSavePetType
-BEFORE INSERT OR UPDATE ON PetType
+BEFORE INSERT OR UPDATE OR DELETE ON PetType
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1888,11 +1784,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetType', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetType;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetBreed
-BEFORE INSERT OR UPDATE ON PetBreed
+BEFORE INSERT OR UPDATE OR DELETE ON PetBreed
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1925,11 +1829,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetBreed', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetBreed;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetSize
-BEFORE INSERT OR UPDATE ON PetSize
+BEFORE INSERT OR UPDATE OR DELETE ON PetSize
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1954,11 +1866,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetSize', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetSize;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetColor
-BEFORE INSERT OR UPDATE ON PetColor
+BEFORE INSERT OR UPDATE OR DELETE ON PetColor
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -1983,11 +1903,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetColor', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetColor;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetSeverity
-BEFORE INSERT OR UPDATE ON PetSeverity
+BEFORE INSERT OR UPDATE OR DELETE ON PetSeverity
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -2012,11 +1940,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetSeverity', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetSeverity;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetEnergy
-BEFORE INSERT OR UPDATE ON PetEnergy
+BEFORE INSERT OR UPDATE OR DELETE ON PetEnergy
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -2041,11 +1977,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetEnergy', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetEnergy;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetTrainability
-BEFORE INSERT OR UPDATE ON PetTrainability
+BEFORE INSERT OR UPDATE OR DELETE ON PetTrainability
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -2070,11 +2014,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetTrainability', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetTrainability;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePetStatus
-BEFORE INSERT OR UPDATE ON PetStatus
+BEFORE INSERT OR UPDATE OR DELETE ON PetStatus
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -2099,11 +2051,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'PetStatus', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePetStatus;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSavePet
-BEFORE INSERT OR UPDATE ON Pet
+BEFORE INSERT OR UPDATE OR DELETE ON Pet
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -2232,14 +2192,22 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Pet', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSavePet;
 /
 
 --================================================
 --==== Triggers recompensa y parametros ====
 --================================================
+
 CREATE OR REPLACE TRIGGER beforeSaveReward
-BEFORE INSERT OR UPDATE ON Reward
+BEFORE INSERT OR UPDATE OR DELETE ON Reward
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -2280,11 +2248,19 @@ BEGIN
             );
         END IF;
     END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Reward', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
+    END IF;
 END beforeSaveReward;
 /
 
+
 CREATE OR REPLACE TRIGGER beforeSaveParameter
-BEFORE INSERT OR UPDATE ON Parameter
+BEFORE INSERT OR UPDATE OR DELETE ON Parameter
 FOR EACH ROW
 BEGIN
     IF INSERTING THEN
@@ -2332,6 +2308,13 @@ BEGIN
                 TO_CHAR(:NEW.id), 'Changed parameter number value', USER
             );
         END IF;
+    END IF;
+
+    IF DELETING THEN
+        ADOPCION_AUDIT.createLog(
+            'ADOPCION_APP', 'Parameter', NULL, NULL, NULL,
+            TO_CHAR(:OLD.id), 'Tuple deletion', USER
+        );
     END IF;
 END beforeSaveParameter;
 /

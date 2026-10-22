@@ -763,6 +763,8 @@ BEGIN
 
     INSERT INTO DISTRICT (id, idCanton, name)
     VALUES (s_district.NEXTVAL, 37, 'Santa Isabel');
+
+    COMMIT;
 END;
 /
 
@@ -942,5 +944,7 @@ BEGIN
 
     INSERT INTO DISTRICT (id, idCanton, name)
     VALUES (s_district.NEXTVAL, 45, 'Patio de Agua');
+
+    COMMIT;
 END;
 /

@@ -1,0 +1,72 @@
+------ Diseño del sistema de Proyecto de BD ------
+
+----View 
+----Interfaz de java
+-Pantallas de registro(incluye ingresar datos para guardar persona) e iniciar sesión 
+-Admin 
+ -Pantalla de parametrización de datos 
+-UserNormal
+ -Operaciones normales y eso
+
+----Controller
+-Controller 
+ -UsuarioActual tipo Usuario
+ -Gestores 
+-Gestores del sistema 
+ -GestorUsuarios                 (Inicio sesión, registro)
+ -GestorPersonas                 (personas, adoptantes, rescatistas, veterinarios, listaNegra)
+ -GestorMascotas                 (inserción, modificación, consulta, estados, fotos)
+ -GestorAdopciones               (adopciones, seguimientos, calificaciones)
+ -GestorDonacionesAsociaciones   (Donaciones y asociaciones)
+ -GestorCasasCuna                (Casas cunas)     
+ -GestorEstadisticas             (Estadisticas y bitácora)
+ -GestorCatalogos                (Insercion y modificación de los catálogos)
+ -Gestor de errores              (Manejo de decodificación de errores)
+-Interfaz de codigos de errores 
+-DataValidator
+
+----Model
+-Usuario 
+-Persona 
+ -Adoptante 
+ -CasaCuna
+ -Veterinario 
+-Ubicacion 
+ -Distrito, canton, provincia, país
+ -Direccion 
+-Mascota 
+-Foto
+-OtraMascota
+-Adopcion
+-Seguimiento
+-Calificación
+-EntradaListaNegra
+-Recompensa
+-Enfermedad
+-Tratamiento
+-Medicamento
+-Vivienda
+-Donacion 
+ -DetalleDonacion 
+-Asociacion
+-RegistroBitácora
+-ObjetoCatalogo (id, nombre) reutilizable en todos los catalogos 
+-Parametro (Para evitar manejo de código en duro)
+-DTOs de estadísticas 
+
+-Response
+-Response_code
+
+----Acceso Datos(DA)
+-Conexion
+-ConfiguracionBD
+-EjecutarProcedimientos 
+-UsuarioDAO
+-PersonaDAO
+-MascotaDAO
+-UbicacionDAO
+-AdopcionDAO
+-DonacionDAO
+-CasaCunaDAO
+-EstadisticaDAO
+-CatalogoDAO

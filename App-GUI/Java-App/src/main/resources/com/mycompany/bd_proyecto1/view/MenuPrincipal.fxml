@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Menú principal: barra superior, opciones según el perfil a la izquierda y contenido al
+  centro.
+  Controlador: MenuPrincipalController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-13
+-->
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.mycompany.bd_proyecto1.controller.MenuPrincipalController"
+            styleClass="fondo-app">
+
+    <top>
+        <HBox styleClass="barra-superior" alignment="CENTER_LEFT" spacing="16">
+            <padding>
+                <Insets top="12" right="20" bottom="12" left="20"/>
+            </padding>
+            <Label text="Bienestar Animal" styleClass="titulo-barra"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <VBox alignment="CENTER_RIGHT">
+                <Label fx:id="lblNombreUsuario" styleClass="usuario-barra"/>
+                <Label fx:id="lblPerfil" styleClass="perfil-barra"/>
+            </VBox>
+            <Button text="Cerrar sesión" styleClass="boton-secundario" onAction="#onCerrarSesion"/>
+        </HBox>
+    </top>
+
+    <left>
+        <VBox fx:id="menuOpciones" styleClass="menu-lateral" spacing="4" prefWidth="230">
+            <padding>
+                <Insets top="16" right="12" bottom="16" left="12"/>
+            </padding>
+        </VBox>
+    </left>
+
+    <center>
+        <!-- Aquí se cargan las vistas de cada módulo (Navegador.mostrarEnContenido). -->
+        <StackPane fx:id="areaContenido">
+            <VBox fx:id="panelMensaje" styleClass="contenido" spacing="8">
+                <padding>
+                    <Insets top="28" right="28" bottom="28" left="28"/>
+                </padding>
+                <Label fx:id="lblTituloContenido" styleClass="titulo-modulo" wrapText="true"/>
+                <Label fx:id="lblDescripcionContenido" styleClass="texto-secundario" wrapText="true"/>
+            </VBox>
+        </StackPane>
+    </center>
+</BorderPane>

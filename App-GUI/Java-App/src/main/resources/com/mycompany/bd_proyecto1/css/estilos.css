@@ -1,0 +1,192 @@
+/*
+ * Hoja de estilos general de la aplicación Bienestar Animal.
+ * Autor: Carlos Hidalgo | Creación: 2026-10-13
+ */
+
+.root {
+    -color-primario: #2e7d5b;
+    -color-primario-oscuro: #1f5a41;
+    -color-fondo: #eef3f0;
+    -color-texto: #1f2a24;
+    -color-error: #b3261e;
+
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-texto;
+}
+
+/* ---------- Login ---------- */
+
+.fondo-login {
+    -fx-background-color: -color-fondo;
+}
+
+.tarjeta-login {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 18, 0, 0, 4);
+}
+
+.titulo-app {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-primario-oscuro;
+}
+
+.subtitulo {
+    -fx-font-size: 15px;
+    -fx-text-fill: #55635b;
+    -fx-padding: 0 0 8 0;
+}
+
+.etiqueta-campo {
+    -fx-font-weight: bold;
+}
+
+.mensaje-error {
+    -fx-text-fill: -color-error;
+}
+
+.aviso-desarrollo {
+    -fx-text-fill: #8a6d00;
+    -fx-background-color: #fff6d6;
+    -fx-background-radius: 6;
+    -fx-padding: 8;
+    -fx-font-size: 12px;
+}
+
+/* ---------- Menú principal ---------- */
+
+.fondo-app {
+    -fx-background-color: -color-fondo;
+}
+
+.barra-superior {
+    -fx-background-color: -color-primario-oscuro;
+}
+
+.titulo-barra {
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.usuario-barra {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.perfil-barra {
+    -fx-text-fill: #cfe5da;
+    -fx-font-size: 12px;
+}
+
+.menu-lateral {
+    -fx-background-color: white;
+    -fx-border-color: transparent #d6e0da transparent transparent;
+}
+
+.boton-menu {
+    -fx-background-color: transparent;
+    -fx-alignment: center-left;
+    -fx-padding: 9 12 9 12;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.boton-menu:hover {
+    -fx-background-color: #e3efe8;
+}
+
+.boton-menu.seleccionado {
+    -fx-background-color: -color-primario;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.titulo-modulo {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-primario-oscuro;
+}
+
+.texto-secundario {
+    -fx-text-fill: #55635b;
+}
+
+/* ---------- Pantallas de módulos ---------- */
+
+.scroll-pane.contenido,
+.scroll-pane.contenido > .viewport {
+    -fx-background-color: transparent;
+}
+
+.panel-blanco {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-color: #d6e0da;
+    -fx-border-radius: 8;
+}
+
+.seccion-titulo {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-primario-oscuro;
+}
+
+.texto-total {
+    -fx-font-weight: bold;
+}
+
+.aviso-info {
+    -fx-text-fill: #1f4e79;
+    -fx-background-color: #ddebf7;
+    -fx-background-radius: 6;
+    -fx-padding: 8;
+}
+
+.boton-claro {
+    -fx-background-color: white;
+    -fx-border-color: -color-primario;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: -color-primario-oscuro;
+    -fx-pref-height: 36px;
+    -fx-cursor: hand;
+}
+
+.boton-claro:hover {
+    -fx-background-color: #e3efe8;
+}
+
+/* ---------- Controles generales ---------- */
+
+.text-field, .password-field {
+    -fx-pref-height: 34px;
+}
+
+.boton-primario {
+    -fx-background-color: -color-primario;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-pref-height: 36px;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.boton-primario:hover {
+    -fx-background-color: -color-primario-oscuro;
+}
+
+.boton-secundario {
+    -fx-background-color: transparent;
+    -fx-border-color: white;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: white;
+    -fx-cursor: hand;
+}
+
+.boton-secundario:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+}

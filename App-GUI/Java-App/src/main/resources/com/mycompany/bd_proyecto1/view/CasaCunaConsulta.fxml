@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Consulta de casas cuna (hogares temporales).
+  Controlador: CasaCunaConsultaController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-20
+-->
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mycompany.bd_proyecto1.controller.CasaCunaConsultaController"
+      styleClass="contenido" spacing="12">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Casas cuna" styleClass="titulo-modulo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnMiCasa" text="Mi casa cuna" styleClass="boton-primario" onAction="#onMiCasa"/>
+    </HBox>
+    <Label styleClass="texto-secundario" wrapText="true"
+           text="Hogares temporales para mascotas. Una casa está disponible si su estado es &quot;Disponible&quot; y todavía tiene cupo. Doble clic en una fila abre sus datos."/>
+
+    <!-- ====================================================================== -->
+    <!-- ============================== Filtros =============================== -->
+    <!-- ====================================================================== -->
+
+    <VBox styleClass="panel-blanco" spacing="10">
+        <padding>
+            <Insets top="14" right="14" bottom="14" left="14"/>
+        </padding>
+        <GridPane hgap="12" vgap="4">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+            </columnConstraints>
+            <Label text="Tipo de mascota" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <Label text="Tamaño" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            <Label text="Estado" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <Label text="Requiere donación de alimentos" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="cmbTipo" promptText="Todos" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cmbTamano" promptText="Todos" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cmbEstado" promptText="Todos" maxWidth="Infinity" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="cmbDonacion" promptText="Todas" maxWidth="Infinity" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+            <CheckBox fx:id="chkSoloDisponibles" text="Solo casas disponibles" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="2"/>
+            <HBox spacing="8" GridPane.columnIndex="3" GridPane.rowIndex="2">
+                <Button text="Buscar" styleClass="boton-primario" defaultButton="true" onAction="#onBuscar"/>
+                <Button text="Limpiar" styleClass="boton-claro" onAction="#onLimpiar"/>
+            </HBox>
+        </GridPane>
+        <fx:include fx:id="ubicacion" source="UbicacionCampos.fxml"/>
+    </VBox>
+
+    <!-- ====================================================================== -->
+    <!-- ============================= Resultados ============================= -->
+    <!-- ====================================================================== -->
+
+    <TableView fx:id="tblCasas" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colPersona" text="Persona" prefWidth="170"/>
+            <TableColumn fx:id="colLugar" text="Lugar" prefWidth="190"/>
+            <TableColumn fx:id="colEstado" text="Estado" prefWidth="85"/>
+            <TableColumn fx:id="colOcupacion" text="Ocupación" prefWidth="80"/>
+            <TableColumn fx:id="colDisponible" text="¿Disponible?" prefWidth="90"/>
+            <TableColumn fx:id="colTamanos" text="Tamaños" prefWidth="130"/>
+            <TableColumn fx:id="colDonacion" text="Pide alimentos" prefWidth="95"/>
+            <TableColumn fx:id="colContacto" text="Contacto" prefWidth="230"/>
+        </columns>
+        <placeholder>
+            <Label text="No hay casas cuna que coincidan con la búsqueda."/>
+        </placeholder>
+    </TableView>
+
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label fx:id="lblTotalRegistros" styleClass="texto-total"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Ver la seleccionada" styleClass="boton-claro" onAction="#onAbrir"/>
+    </HBox>
+</VBox>

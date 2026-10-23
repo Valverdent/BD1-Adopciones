@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Consulta de personas: filtros y tabla. Doble clic abre el detalle.
+  Controlador: PersonaConsultaController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-20
+-->
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mycompany.bd_proyecto1.controller.PersonaConsultaController"
+      styleClass="contenido" spacing="12">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Personas" styleClass="titulo-modulo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnNueva" text="Registrar persona" styleClass="boton-primario" onAction="#onNueva"/>
+    </HBox>
+    <Label styleClass="texto-secundario" wrapText="true"
+           text="Busque por nombre o lugar de residencia. Abra una persona para ver su historial de adopciones y su estado en la lista negra."/>
+
+    <!-- ====================================================================== -->
+    <!-- ============================== Filtros =============================== -->
+    <!-- ====================================================================== -->
+
+    <VBox styleClass="panel-blanco" spacing="10">
+        <padding>
+            <Insets top="14" right="14" bottom="14" left="14"/>
+        </padding>
+        <GridPane hgap="12" vgap="4">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="50"/>
+                <ColumnConstraints percentWidth="50"/>
+            </columnConstraints>
+            <Label text="Nombre" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="txtNombre" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <HBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <Button text="Buscar" styleClass="boton-primario" defaultButton="true" onAction="#onBuscar"/>
+                <Button text="Limpiar" styleClass="boton-claro" onAction="#onLimpiar"/>
+            </HBox>
+        </GridPane>
+        <fx:include fx:id="ubicacion" source="UbicacionCampos.fxml"/>
+    </VBox>
+
+    <!-- ====================================================================== -->
+    <!-- ============================= Resultados ============================= -->
+    <!-- ====================================================================== -->
+
+    <TableView fx:id="tblPersonas" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colNombre" text="Nombre" prefWidth="230"/>
+            <TableColumn fx:id="colLugar" text="Lugar" prefWidth="220"/>
+            <TableColumn fx:id="colTelefonos" text="Teléfonos" prefWidth="140"/>
+            <TableColumn fx:id="colCorreos" text="Correos" prefWidth="220"/>
+        </columns>
+        <placeholder>
+            <Label text="No hay personas que coincidan con la búsqueda."/>
+        </placeholder>
+    </TableView>
+
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label fx:id="lblTotalRegistros" styleClass="texto-total"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Ver detalle de la seleccionada" styleClass="boton-claro" onAction="#onAbrir"/>
+    </HBox>
+</VBox>

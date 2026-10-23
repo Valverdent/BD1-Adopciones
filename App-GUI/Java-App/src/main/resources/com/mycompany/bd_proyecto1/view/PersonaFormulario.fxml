@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Registro y edición de una persona, con sus teléfonos y correos.
+  Controlador: PersonaFormularioController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-20
+-->
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.mycompany.bd_proyecto1.controller.PersonaFormularioController"
+            fitToWidth="true" styleClass="scroll-pane">
+    <VBox styleClass="contenido" spacing="12">
+        <padding>
+            <Insets top="24" right="24" bottom="24" left="24"/>
+        </padding>
+        <Label fx:id="lblTitulo" text="Persona" styleClass="titulo-modulo"/>
+
+        <!-- ====================================================================== -->
+        <!-- ========================== Datos personales ========================== -->
+        <!-- ====================================================================== -->
+
+        <VBox styleClass="panel-blanco" spacing="10">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Datos personales" styleClass="seccion-titulo"/>
+            <GridPane hgap="12" vgap="4">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50"/>
+                    <ColumnConstraints percentWidth="50"/>
+                </columnConstraints>
+                <Label text="Nombre *" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <Label text="Segundo nombre" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                <TextField fx:id="txtNombre" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtSegundoNombre" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                <Label text="Primer apellido *" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <Label text="Segundo apellido" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                <TextField fx:id="txtPrimerApellido" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                <TextField fx:id="txtSegundoApellido" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+            </GridPane>
+            <!-- ====================================================================== -->
+            <!-- ==================== Solo el administrador la ve ===================== -->
+            <!-- ====================================================================== -->
+            <CheckBox fx:id="chkVeterinario" text="Es veterinario/a (aparecerá en la lista de veterinarios de las mascotas)"/>
+        </VBox>
+
+        <!-- ====================================================================== -->
+        <!-- ======================== Lugar de residencia ========================= -->
+        <!-- ====================================================================== -->
+
+        <VBox styleClass="panel-blanco" spacing="10">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Lugar de residencia" styleClass="seccion-titulo"/>
+            <fx:include fx:id="ubicacion" source="UbicacionCampos.fxml"/>
+        </VBox>
+
+        <!-- ====================================================================== -->
+        <!-- ============ Contacto (al menos un teléfono y un correo) ============= -->
+        <!-- ====================================================================== -->
+
+        <VBox styleClass="panel-blanco" spacing="10">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Contacto (al menos un teléfono y un correo)" styleClass="seccion-titulo"/>
+            <GridPane hgap="12" vgap="4">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50"/>
+                    <ColumnConstraints percentWidth="50"/>
+                </columnConstraints>
+                <Label text="Teléfonos" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <Label text="Correos electrónicos" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                <HBox spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <TextField fx:id="txtTelefono" promptText="8888-1111" HBox.hgrow="ALWAYS"/>
+                    <Button text="Agregar" styleClass="boton-claro" onAction="#onAgregarTelefono"/>
+                </HBox>
+                <HBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <TextField fx:id="txtCorreo" promptText="nombre@correo.com" HBox.hgrow="ALWAYS"/>
+                    <Button text="Agregar" styleClass="boton-claro" onAction="#onAgregarCorreo"/>
+                </HBox>
+                <ListView fx:id="lstTelefonos" prefHeight="110" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <ListView fx:id="lstCorreos" prefHeight="110" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                <Button text="Quitar seleccionado" styleClass="boton-claro" onAction="#onQuitarTelefono"
+                        GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                <Button text="Quitar seleccionado" styleClass="boton-claro" onAction="#onQuitarCorreo"
+                        GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+            </GridPane>
+        </VBox>
+
+        <HBox spacing="10">
+            <Button text="Guardar" styleClass="boton-primario" onAction="#onGuardar"/>
+            <Button text="Cancelar" styleClass="boton-claro" onAction="#onCancelar"/>
+        </HBox>
+    </VBox>
+</ScrollPane>

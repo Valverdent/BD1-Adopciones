@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Consulta de adopciones: filtros, tabla de resultados y total (requisitos 4.f y 5.f).
+  Controlador: AdopcionConsultaController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-20
+-->
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mycompany.bd_proyecto1.controller.AdopcionConsultaController"
+      styleClass="contenido" spacing="12">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <!-- ====================================================================== -->
+    <!-- ============================= Encabezado ============================= -->
+    <!-- ====================================================================== -->
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Adopciones" styleClass="titulo-modulo"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Adopciones por adoptante" styleClass="boton-claro" onAction="#onPorAdoptante"/>
+        <Button text="Registrar adopción" styleClass="boton-primario" onAction="#onNueva"/>
+    </HBox>
+    <Label styleClass="texto-secundario" wrapText="true"
+           text="Busque por cualquier combinación de campos. Los resultados se ordenan de la adopción más reciente a la más antigua."/>
+
+    <!-- ====================================================================== -->
+    <!-- ============ Filtros: cada etiqueta va encima de su campo ============ -->
+    <!-- ====================================================================== -->
+    <VBox styleClass="panel-blanco" spacing="10">
+        <padding>
+            <Insets top="14" right="14" bottom="14" left="14"/>
+        </padding>
+        <GridPane hgap="12" vgap="4">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+                <ColumnConstraints percentWidth="25"/>
+            </columnConstraints>
+
+            <Label text="Tipo de mascota" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <Label text="Nombre de la mascota" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            <Label text="Adoptante" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <Label text="Entregada por" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="cmbTipo" promptText="Todos" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="txtNombreMascota" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            <TextField fx:id="txtAdoptante" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+            <TextField fx:id="txtEntregadoPor" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+            <Label text="Fecha desde" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <Label text="Fecha hasta" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+            <DatePicker fx:id="dpDesde" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+            <DatePicker fx:id="dpHasta" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+            <HBox spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="3">
+                <Button text="Buscar" styleClass="boton-primario" defaultButton="true" onAction="#onBuscar"/>
+                <Button text="Limpiar" styleClass="boton-claro" onAction="#onLimpiar"/>
+            </HBox>
+        </GridPane>
+    </VBox>
+
+    <!-- ====================================================================== -->
+    <!-- ========== Resultados (doble clic en una fila para abrirla) ========== -->
+    <!-- ====================================================================== -->
+    <TableView fx:id="tblAdopciones" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colFecha" text="Fecha" prefWidth="90"/>
+            <TableColumn fx:id="colMascota" text="Mascota" prefWidth="110"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="70"/>
+            <TableColumn fx:id="colAdoptante" text="Adoptante" prefWidth="170"/>
+            <TableColumn fx:id="colEntregadoPor" text="Entregada por" prefWidth="170"/>
+            <TableColumn fx:id="colCalificacion" text="Calificación" prefWidth="120"/>
+            <TableColumn fx:id="colSeguimientos" text="Seguimientos" prefWidth="95"/>
+        </columns>
+        <placeholder>
+            <Label text="No hay adopciones que coincidan con la búsqueda."/>
+        </placeholder>
+    </TableView>
+
+    <!-- ====================================================================== -->
+    <!-- ========================== Total y acciones ========================== -->
+    <!-- ====================================================================== -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label fx:id="lblTotalRegistros" styleClass="texto-total"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Ver / editar seleccionada" styleClass="boton-claro" onAction="#onAbrir"/>
+    </HBox>
+</VBox>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Catálogos, parámetros y usuarios (requisito 12). Solo administradores.
+  Controlador: ParametrosController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-21
+-->
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mycompany.bd_proyecto1.controller.ParametrosController"
+      styleClass="contenido" spacing="12">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <Label text="Catálogos, parámetros y usuarios" styleClass="titulo-modulo"/>
+
+    <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+
+        <!-- ====================================================================== -->
+        <!-- ======================= Parámetros del sistema ======================= -->
+        <!-- ====================================================================== -->
+        <Tab text="Parámetros del sistema">
+            <VBox spacing="10">
+                <padding>
+                    <Insets top="14" right="4" bottom="14" left="4"/>
+                </padding>
+                <Label styleClass="texto-secundario" wrapText="true"
+                       text="Valores que usa la aplicación en lugar de datos escritos en el código. Seleccione un parámetro, escriba su nuevo valor y guárdelo. Cada cambio queda en la bitácora."/>
+                <!-- ====================================================================== -->
+                <!-- ======================= Parámetros registrados ======================= -->
+                <!-- ====================================================================== -->
+
+                <TableView fx:id="tblParametros" VBox.vgrow="ALWAYS" prefHeight="200">
+                    <columns>
+                        <TableColumn fx:id="colParamDescripcion" text="Parámetro" prefWidth="420"/>
+                        <TableColumn fx:id="colParamClave" text="Clave" prefWidth="240"/>
+                        <TableColumn fx:id="colParamValor" text="Valor" prefWidth="100"/>
+                    </columns>
+                </TableView>
+                <!-- ====================================================================== -->
+                <!-- ======================== Valor del parámetro ========================= -->
+                <!-- ====================================================================== -->
+
+                <VBox styleClass="panel-blanco" spacing="10">
+                    <padding>
+                        <Insets top="14" right="14" bottom="14" left="14"/>
+                    </padding>
+                    <GridPane hgap="12" vgap="4">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="70"/>
+                            <ColumnConstraints percentWidth="30"/>
+                        </columnConstraints>
+                        <Label text="Nuevo valor" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <TextField fx:id="txtValorParametro" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <Button text="Guardar valor" styleClass="boton-primario" onAction="#onGuardarParametro"
+                                maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    </GridPane>
+                    <Label fx:id="lblMensajeParametro" styleClass="texto-secundario" wrapText="true"/>
+                </VBox>
+            </VBox>
+        </Tab>
+
+        <!-- ====================================================================== -->
+        <!-- ============================= Catálogos ============================== -->
+        <!-- ====================================================================== -->
+        <Tab text="Catálogos">
+            <VBox spacing="10">
+                <padding>
+                    <Insets top="14" right="4" bottom="14" left="4"/>
+                </padding>
+                <Label styleClass="texto-secundario" wrapText="true"
+                       text="Elementos que aparecen en los formularios y reportes, incluidos los lugares (país, provincia, cantón y distrito). Un elemento que ya usa algún registro no se puede eliminar; sí se le puede cambiar el nombre."/>
+                <!-- ====================================================================== -->
+                <!-- ========================= Datos del catálogo ========================= -->
+                <!-- ====================================================================== -->
+
+                <VBox styleClass="panel-blanco" spacing="10">
+                    <padding>
+                        <Insets top="14" right="14" bottom="14" left="14"/>
+                    </padding>
+                    <GridPane hgap="12" vgap="4">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="30"/>
+                            <ColumnConstraints percentWidth="70"/>
+                        </columnConstraints>
+                        <Label text="Catálogo" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <Label fx:id="lblPadre" text="Pertenece a" visible="false" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                        <ComboBox fx:id="cmbCatalogo" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <!-- Padre del elemento: tipo de mascota (razas) o país/provincia/cantón (lugares) -->
+                        <HBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <ComboBox fx:id="cmbTipoRaza" promptText="Tipo de mascota" prefWidth="180" visible="false" managed="false"/>
+                            <ComboBox fx:id="cmbLugarPais" promptText="País" prefWidth="160" visible="false" managed="false"/>
+                            <ComboBox fx:id="cmbLugarProvincia" promptText="Provincia" prefWidth="160" visible="false" managed="false"/>
+                            <ComboBox fx:id="cmbLugarCanton" promptText="Cantón" prefWidth="160" visible="false" managed="false"/>
+                            <!-- No se muestra: lo necesita el selector de ubicación, pero un distrito no es padre de nada -->
+                            <ComboBox fx:id="cmbLugarDistrito" visible="false" managed="false"/>
+                        </HBox>
+                    </GridPane>
+                    <Label fx:id="lblSoloLectura" styleClass="texto-secundario" wrapText="true"/>
+                </VBox>
+                <!-- ====================================================================== -->
+                <!-- ======================= Elementos del catálogo ======================= -->
+                <!-- ====================================================================== -->
+
+                <TableView fx:id="tblCatalogo" VBox.vgrow="ALWAYS" prefHeight="200">
+                    <columns>
+                        <TableColumn fx:id="colCatNombre" text="Nombre" prefWidth="420"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="Este catálogo no tiene elementos."/>
+                    </placeholder>
+                </TableView>
+                <!-- ====================================================================== -->
+                <!-- ======================== Edición del elemento ======================== -->
+                <!-- ====================================================================== -->
+
+                <VBox styleClass="panel-blanco" spacing="10">
+                    <padding>
+                        <Insets top="14" right="14" bottom="14" left="14"/>
+                    </padding>
+                    <Label text="Nombre del elemento" />
+                    <TextField fx:id="txtNombreCatalogo" maxWidth="Infinity"/>
+                    <HBox spacing="8">
+                        <Button fx:id="btnAgregar" text="Agregar" styleClass="boton-primario" onAction="#onAgregar"/>
+                        <Button fx:id="btnGuardarNombre" text="Guardar nombre" styleClass="boton-claro" onAction="#onGuardarNombre"/>
+                        <Button fx:id="btnEliminar" text="Eliminar" styleClass="boton-claro" onAction="#onEliminar"/>
+                    </HBox>
+                    <Label fx:id="lblMensajeCatalogo" styleClass="texto-secundario" wrapText="true"/>
+                </VBox>
+            </VBox>
+        </Tab>
+
+        <!-- Usuarios: vista y controlador propios (Usuarios.fxml / UsuariosController) -->
+        <Tab text="Usuarios">
+            <fx:include source="Usuarios.fxml"/>
+        </Tab>
+    </TabPane>
+</VBox>

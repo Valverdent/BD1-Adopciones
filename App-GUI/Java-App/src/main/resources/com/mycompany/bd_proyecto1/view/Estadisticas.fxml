@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Estadísticas (requisito 8): cada pestaña muestra números, porcentajes y un gráfico.
+  Controlador: EstadisticasController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-20
+-->
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mycompany.bd_proyecto1.controller.EstadisticasController"
+      styleClass="contenido" spacing="12">
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <Label text="Estadísticas" styleClass="titulo-modulo"/>
+
+    <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+
+        <!-- ====================================================================== -->
+        <!-- ===================== Mascotas por tipo y estado ===================== -->
+        <!-- ====================================================================== -->
+        <Tab text="Mascotas por tipo y estado">
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+                <VBox spacing="12">
+                    <padding>
+                        <Insets top="14" right="4" bottom="14" left="4"/>
+                    </padding>
+                    <Label styleClass="texto-secundario" wrapText="true"
+                           text="Mascotas registradas según su tipo y estado, por la fecha en que se registraron en el sistema. Por defecto: desde el inicio del año hasta hoy."/>
+                    <!-- ====================================================================== -->
+                    <!-- ============================== Filtros =============================== -->
+                    <!-- ====================================================================== -->
+
+                    <VBox styleClass="panel-blanco" spacing="10">
+                        <padding>
+                            <Insets top="14" right="14" bottom="14" left="14"/>
+                        </padding>
+                        <GridPane hgap="12" vgap="4">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            <Label text="Desde" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label text="Hasta" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <DatePicker fx:id="dpDesdeMascotas" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <DatePicker fx:id="dpHastaMascotas" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                            <HBox spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                <Button text="Actualizar" styleClass="boton-primario" onAction="#onActualizarMascotas"/>
+                                <Button text="Restablecer fechas" styleClass="boton-claro" onAction="#onRestablecerMascotas"/>
+                            </HBox>
+                        </GridPane>
+                    </VBox>
+                    <TableView fx:id="tblMascotas" prefHeight="220">
+                        <columns>
+                            <TableColumn fx:id="colMascTipo" text="Tipo" prefWidth="140"/>
+                            <TableColumn fx:id="colMascEstado" text="Estado" prefWidth="160"/>
+                            <TableColumn fx:id="colMascCantidad" text="Cantidad" prefWidth="100"/>
+                            <TableColumn fx:id="colMascPorcentaje" text="Porcentaje" prefWidth="110"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No hay mascotas en ese rango de fechas."/>
+                        </placeholder>
+                    </TableView>
+                    <Label fx:id="lblTotalMascotas" styleClass="texto-total"/>
+                    <BarChart fx:id="grafMascotas" title="Mascotas por tipo y estado" prefHeight="300" animated="false">
+                        <xAxis>
+                            <CategoryAxis label="Tipo de mascota"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Cantidad" minorTickVisible="false" tickUnit="1"/>
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- ====================================================================== -->
+        <!-- ===================== Donaciones por asociación ====================== -->
+        <!-- ====================================================================== -->
+        <Tab text="Donaciones por asociación">
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+                <VBox spacing="12">
+                    <padding>
+                        <Insets top="14" right="4" bottom="14" left="4"/>
+                    </padding>
+                    <Label styleClass="texto-secundario" wrapText="true"
+                           text="Total donado a cada asociación beneficiada. Los colones y los dólares no se suman: el porcentaje se calcula sobre el total de la misma moneda."/>
+                    <!-- ====================================================================== -->
+                    <!-- ============================== Filtros =============================== -->
+                    <!-- ====================================================================== -->
+
+                    <VBox styleClass="panel-blanco" spacing="10">
+                        <padding>
+                            <Insets top="14" right="14" bottom="14" left="14"/>
+                        </padding>
+                        <GridPane hgap="12" vgap="4">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            <Label text="Desde" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label text="Hasta" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <DatePicker fx:id="dpDesdeDonaciones" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <DatePicker fx:id="dpHastaDonaciones" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                            <HBox spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                <Button text="Actualizar" styleClass="boton-primario" onAction="#onActualizarDonaciones"/>
+                                <Button text="Restablecer fechas" styleClass="boton-claro" onAction="#onRestablecerDonaciones"/>
+                            </HBox>
+                        </GridPane>
+                    </VBox>
+                    <TableView fx:id="tblDonaciones" prefHeight="220">
+                        <columns>
+                            <TableColumn fx:id="colDonAsociacion" text="Asociación" prefWidth="220"/>
+                            <TableColumn fx:id="colDonMoneda" text="Moneda" prefWidth="130"/>
+                            <TableColumn fx:id="colDonTotal" text="Total donado" prefWidth="130"/>
+                            <TableColumn fx:id="colDonCantidad" text="Donaciones" prefWidth="100"/>
+                            <TableColumn fx:id="colDonPorcentaje" text="Porcentaje en su moneda" prefWidth="130"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No hay donaciones en ese rango de fechas."/>
+                        </placeholder>
+                    </TableView>
+                    <Label fx:id="lblTotalDonaciones" styleClass="texto-total" wrapText="true"/>
+                    <BarChart fx:id="grafDonaciones" title="Porcentaje de lo donado por asociación (según su moneda)" prefHeight="300" animated="false">
+                        <xAxis>
+                            <CategoryAxis label="Asociación"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Porcentaje del total" upperBound="100" autoRanging="false" tickUnit="10"/>
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- ====================================================================== -->
+        <!-- ================= Adopciones exitosas vs. en espera ================== -->
+        <!-- ====================================================================== -->
+        <Tab text="Adopciones vs. en espera">
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+                <VBox spacing="12">
+                    <padding>
+                        <Insets top="14" right="4" bottom="14" left="4"/>
+                    </padding>
+                    <Label styleClass="texto-secundario" wrapText="true"
+                           text="Porcentaje de mascotas adoptadas frente a las que siguen en espera de adopción. Puede filtrar por tipo y, luego, por raza."/>
+                    <!-- ====================================================================== -->
+                    <!-- ============================== Filtros =============================== -->
+                    <!-- ====================================================================== -->
+
+                    <VBox styleClass="panel-blanco" spacing="10">
+                        <padding>
+                            <Insets top="14" right="14" bottom="14" left="14"/>
+                        </padding>
+                        <GridPane hgap="12" vgap="4">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            <Label text="Tipo de mascota" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label text="Raza" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <ComboBox fx:id="cmbTipoAdopciones" promptText="Todos" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <ComboBox fx:id="cmbRazaAdopciones" promptText="Todas" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                            <HBox spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                <Button text="Actualizar" styleClass="boton-primario" onAction="#onActualizarAdopciones"/>
+                                <Button text="Limpiar filtros" styleClass="boton-claro" onAction="#onLimpiarAdopciones"/>
+                            </HBox>
+                        </GridPane>
+                    </VBox>
+                    <TableView fx:id="tblAdopciones" prefHeight="110">
+                        <columns>
+                            <TableColumn fx:id="colAdopSituacion" text="Situación" prefWidth="220"/>
+                            <TableColumn fx:id="colAdopCantidad" text="Cantidad" prefWidth="100"/>
+                            <TableColumn fx:id="colAdopPorcentaje" text="Porcentaje" prefWidth="110"/>
+                        </columns>
+                    </TableView>
+                    <Label fx:id="lblTotalAdopciones" styleClass="texto-total"/>
+                    <PieChart fx:id="grafAdopciones" title="Adoptadas vs. en espera" prefHeight="300" animated="false"/>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- ====================================================================== -->
+        <!-- =================== No adoptadas por rango de edad =================== -->
+        <!-- ====================================================================== -->
+        <Tab text="No adoptadas por edad">
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+                <VBox spacing="12">
+                    <padding>
+                        <Insets top="14" right="4" bottom="14" left="4"/>
+                    </padding>
+                    <Label styleClass="texto-secundario" wrapText="true"
+                           text="Mascotas que todavía no han sido adoptadas, agrupadas por la edad estimada (en años). Los límites de los rangos son los parámetros AGE_LIMIT_1 a AGE_LIMIT_5; cada rango incluye su límite superior (&quot;1 - 5&quot; cuenta de 2 a 5 años). No se cuentan las mascotas sin edad estimada."/>
+                    <HBox>
+                        <Button text="Actualizar" styleClass="boton-primario" onAction="#onActualizarEdades"/>
+                    </HBox>
+                    <TableView fx:id="tblEdades" prefHeight="230">
+                        <columns>
+                            <TableColumn fx:id="colEdadRango" text="Rango de edad" prefWidth="220"/>
+                            <TableColumn fx:id="colEdadCantidad" text="Cantidad" prefWidth="100"/>
+                            <TableColumn fx:id="colEdadPorcentaje" text="Porcentaje" prefWidth="110"/>
+                        </columns>
+                    </TableView>
+                    <Label fx:id="lblTotalEdades" styleClass="texto-total"/>
+                    <BarChart fx:id="grafEdades" title="Mascotas no adoptadas por rango de edad" prefHeight="300" animated="false" legendVisible="false">
+                        <xAxis>
+                            <CategoryAxis label="Rango de edad (años)"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Cantidad" minorTickVisible="false" tickUnit="1"/>
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- Estadística adicional del equipo: perdidas y encontradas por cantón -->
+        <Tab text="Perdidas y encontradas por cantón">
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+                <VBox spacing="12">
+                    <padding>
+                        <Insets top="14" right="4" bottom="14" left="4"/>
+                    </padding>
+                    <Label styleClass="texto-secundario" wrapText="true"
+                           text="Estadística adicional: mascotas perdidas y encontradas en cada cantón, por la fecha del extravío o hallazgo. Por defecto: desde el inicio del año hasta hoy."/>
+                    <!-- ====================================================================== -->
+                    <!-- ============================== Filtros =============================== -->
+                    <!-- ====================================================================== -->
+
+                    <VBox styleClass="panel-blanco" spacing="10">
+                        <padding>
+                            <Insets top="14" right="14" bottom="14" left="14"/>
+                        </padding>
+                        <GridPane hgap="12" vgap="4">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            <Label text="Desde" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label text="Hasta" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <DatePicker fx:id="dpDesdeCantones" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <DatePicker fx:id="dpHastaCantones" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                            <HBox spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                <Button text="Actualizar" styleClass="boton-primario" onAction="#onActualizarCantones"/>
+                            </HBox>
+                        </GridPane>
+                    </VBox>
+                    <TableView fx:id="tblCantones" prefHeight="230">
+                        <columns>
+                            <TableColumn fx:id="colCantCanton" text="Cantón" prefWidth="200"/>
+                            <TableColumn fx:id="colCantEstado" text="Estado" prefWidth="150"/>
+                            <TableColumn fx:id="colCantCantidad" text="Cantidad" prefWidth="100"/>
+                            <TableColumn fx:id="colCantPorcentaje" text="Porcentaje" prefWidth="110"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No hay mascotas perdidas ni encontradas en ese rango de fechas."/>
+                        </placeholder>
+                    </TableView>
+                    <Label fx:id="lblTotalCantones" styleClass="texto-total"/>
+                    <BarChart fx:id="grafCantones" title="Perdidas y encontradas por cantón" prefHeight="300" animated="false">
+                        <xAxis>
+                            <CategoryAxis label="Cantón"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Cantidad" minorTickVisible="false" tickUnit="1"/>
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- Estadística adicional del equipo: donaciones de recompensa por rescatista -->
+        <Tab text="Donaciones por rescatista">
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane">
+                <VBox spacing="12">
+                    <padding>
+                        <Insets top="14" right="4" bottom="14" left="4"/>
+                    </padding>
+                    <Label styleClass="texto-secundario" wrapText="true"
+                           text="Estadística adicional: lo donado en recompensas, agrupado por la persona que registró a la mascota. El porcentaje es sobre el total de la misma moneda."/>
+                    <!-- ====================================================================== -->
+                    <!-- ============================== Filtros =============================== -->
+                    <!-- ====================================================================== -->
+
+                    <VBox styleClass="panel-blanco" spacing="10">
+                        <padding>
+                            <Insets top="14" right="14" bottom="14" left="14"/>
+                        </padding>
+                        <GridPane hgap="12" vgap="4">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            <Label text="Desde" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label text="Hasta" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <DatePicker fx:id="dpDesdeRescatistas" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <DatePicker fx:id="dpHastaRescatistas" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                            <HBox spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                <Button text="Actualizar" styleClass="boton-primario" onAction="#onActualizarRescatistas"/>
+                            </HBox>
+                        </GridPane>
+                    </VBox>
+                    <TableView fx:id="tblRescatistas" prefHeight="230">
+                        <columns>
+                            <TableColumn fx:id="colResPersona" text="Rescatista" prefWidth="240"/>
+                            <TableColumn fx:id="colResMoneda" text="Moneda" prefWidth="120"/>
+                            <TableColumn fx:id="colResTotal" text="Total donado" prefWidth="130"/>
+                            <TableColumn fx:id="colResPorcentaje" text="Porcentaje en su moneda" prefWidth="160"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No hay donaciones de recompensa en ese rango de fechas."/>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+    </TabPane>
+</VBox>

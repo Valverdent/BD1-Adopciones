@@ -1,0 +1,9 @@
+# Salida de compilación de Maven
+target/
+
+# Credenciales locales de Oracle (cada integrante tiene su propio archivo)
+db.properties
+
+# Archivos locales de NetBeans
+nbproject/private/
+nbactions.xml

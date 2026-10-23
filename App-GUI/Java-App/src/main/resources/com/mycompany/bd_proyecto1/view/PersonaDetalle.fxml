@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Detalle de una persona: datos, lista negra e historial de adopciones.
+  Controlador: PersonaDetalleController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-20
+-->
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.mycompany.bd_proyecto1.controller.PersonaDetalleController"
+            fitToWidth="true" styleClass="scroll-pane">
+    <VBox styleClass="contenido" spacing="12">
+        <padding>
+            <Insets top="24" right="24" bottom="24" left="24"/>
+        </padding>
+
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <Label fx:id="lblNombre" styleClass="titulo-modulo"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnEditar" text="Editar datos" styleClass="boton-primario" onAction="#onEditar"/>
+            <Button text="Volver" styleClass="boton-claro" onAction="#onVolver"/>
+        </HBox>
+
+        <!-- ====================================================================== -->
+        <!-- =============================== Datos ================================ -->
+        <!-- ====================================================================== -->
+
+        <VBox styleClass="panel-blanco" spacing="6">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Datos" styleClass="seccion-titulo"/>
+            <Label fx:id="lblLugar"/>
+            <Label fx:id="lblTelefonos" wrapText="true"/>
+            <Label fx:id="lblCorreos" wrapText="true"/>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="lblVeterinario"/>
+                <Button fx:id="btnVeterinario" text="Registrar como veterinario/a" styleClass="boton-claro"
+                        onAction="#onRegistrarVeterinario"/>
+            </HBox>
+        </VBox>
+
+        <!-- ====================================================================== -->
+        <!-- ============================ Lista negra ============================= -->
+        <!-- ====================================================================== -->
+
+        <VBox styleClass="panel-blanco" spacing="8">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Lista negra" styleClass="seccion-titulo"/>
+            <Label fx:id="lblEstadoListaNegra" wrapText="true"/>
+            <TableView fx:id="tblReportes" prefHeight="150">
+                <columns>
+                    <TableColumn fx:id="colRepFecha" text="Fecha" prefWidth="100"/>
+                    <TableColumn fx:id="colRepMotivo" text="Motivo" prefWidth="620"/>
+                </columns>
+                <placeholder>
+                    <Label text="Sin reportes."/>
+                </placeholder>
+            </TableView>
+            <HBox spacing="8">
+                <Button fx:id="btnQuitarReporte" text="Quitar reporte seleccionado" styleClass="boton-claro" onAction="#onQuitarReporte"/>
+            </HBox>
+            <VBox fx:id="panelReportar" spacing="6">
+                <Label text="Reportar a esta persona (mínimo 10 caracteres)"/>
+                <TextArea fx:id="txtMotivo" prefRowCount="3" wrapText="true"/>
+                <HBox>
+                    <Button text="Reportar en lista negra" styleClass="boton-primario" onAction="#onReportar"/>
+                </HBox>
+            </VBox>
+        </VBox>
+
+        <!-- ====================================================================== -->
+        <!-- ====================== Historial de adopciones ======================= -->
+        <!-- ====================================================================== -->
+
+        <VBox styleClass="panel-blanco" spacing="8">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Historial de adopciones" styleClass="seccion-titulo"/>
+            <Label fx:id="lblPromedio"/>
+            <TableView fx:id="tblAdopciones" prefHeight="170">
+                <columns>
+                    <TableColumn fx:id="colAdopFecha" text="Fecha" prefWidth="100"/>
+                    <TableColumn fx:id="colAdopMascota" text="Mascota" prefWidth="130"/>
+                    <TableColumn fx:id="colAdopCalificacion" text="Calificación" prefWidth="130"/>
+                    <TableColumn fx:id="colAdopNotas" text="Notas" prefWidth="360"/>
+                </columns>
+                <placeholder>
+                    <Label text="Esta persona no tiene adopciones."/>
+                </placeholder>
+            </TableView>
+        </VBox>
+    </VBox>
+</ScrollPane>

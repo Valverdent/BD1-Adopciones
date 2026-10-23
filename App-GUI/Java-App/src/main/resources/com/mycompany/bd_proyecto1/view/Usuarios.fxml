@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Pestaña "Usuarios" de Catálogos y parámetros. Solo administradores.
+  Controlador: UsuariosController
+  Autor: Carlos Hidalgo
+  Creación: 2026-10-21
+-->
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.mycompany.bd_proyecto1.controller.UsuariosController"
+            fitToWidth="true" styleClass="contenido">
+    <VBox spacing="10">
+        <padding>
+            <Insets top="14" right="4" bottom="14" left="4"/>
+        </padding>
+        <Label styleClass="texto-secundario" wrapText="true"
+               text="Cuentas que pueden iniciar sesión. Una cuenta inactiva no puede entrar al sistema. No puede cambiar el rol ni desactivar su propia cuenta."/>
+
+        <TableView fx:id="tblUsuarios" prefHeight="220">
+            <columns>
+                <TableColumn fx:id="colUsuario" text="Usuario" prefWidth="160"/>
+                <TableColumn fx:id="colNombre" text="Nombre completo" prefWidth="300"/>
+                <TableColumn fx:id="colRol" text="Rol" prefWidth="150"/>
+                <TableColumn fx:id="colEstado" text="Estado" prefWidth="110"/>
+            </columns>
+            <placeholder>
+                <Label text="No hay cuentas registradas."/>
+            </placeholder>
+        </TableView>
+
+        <!-- ====================================================================== -->
+        <!-- =============== Acciones sobre la cuenta seleccionada ================ -->
+        <!-- ====================================================================== -->
+        <VBox styleClass="panel-blanco" spacing="10">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Cuenta seleccionada" styleClass="seccion-titulo"/>
+            <HBox spacing="8">
+                <ComboBox fx:id="cmbNuevoRol" prefWidth="200" promptText="Nuevo rol"/>
+                <Button fx:id="btnCambiarRol" text="Cambiar rol" styleClass="boton-claro" onAction="#onCambiarRol"/>
+                <Button fx:id="btnCambiarEstado" text="Desactivar" styleClass="boton-claro" onAction="#onCambiarEstado"/>
+            </HBox>
+            <Label fx:id="lblMensajeCuenta" styleClass="texto-secundario" wrapText="true"/>
+        </VBox>
+
+        <!-- ====================================================================== -->
+        <!-- ======================= Crear una cuenta nueva ======================= -->
+        <!-- ====================================================================== -->
+        <VBox styleClass="panel-blanco" spacing="10">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+            <Label text="Crear cuenta" styleClass="seccion-titulo"/>
+            <GridPane hgap="12" vgap="4">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="25"/>
+                    <ColumnConstraints percentWidth="25"/>
+                    <ColumnConstraints percentWidth="25"/>
+                    <ColumnConstraints percentWidth="25"/>
+                </columnConstraints>
+
+                <Label text="Nombre *" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <Label text="Segundo nombre" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                <Label text="Primer apellido *" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                <Label text="Segundo apellido" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                <TextField fx:id="txtNombre" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtSegundoNombre" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtPrimerApellido" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                <TextField fx:id="txtSegundoApellido" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+
+                <Label text="Teléfono *" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <Label text="Correo electrónico *" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                <TextField fx:id="txtTelefono" promptText="8888-1111" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                <TextField fx:id="txtCorreo" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                <Label text="Usuario *" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                <Label text="Contraseña *" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                <Label text="Confirmar contraseña *" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+                <Label text="Rol *" GridPane.columnIndex="3" GridPane.rowIndex="4"/>
+                <TextField fx:id="txtUsuario" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                <PasswordField fx:id="txtContrasena" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                <PasswordField fx:id="txtConfirmacion" GridPane.columnIndex="2" GridPane.rowIndex="5"/>
+                <ComboBox fx:id="cmbRol" maxWidth="Infinity" GridPane.columnIndex="3" GridPane.rowIndex="5"/>
+            </GridPane>
+            <Label text="Lugar de residencia"/>
+            <fx:include fx:id="ubicacion" source="UbicacionCampos.fxml"/>
+            <HBox spacing="8">
+                <Button text="Crear cuenta" styleClass="boton-primario" onAction="#onCrear"/>
+                <Button text="Limpiar" styleClass="boton-claro" onAction="#onLimpiar"/>
+            </HBox>
+            <Label fx:id="lblMensajeCrear" styleClass="texto-secundario" wrapText="true"/>
+        </VBox>
+    </VBox>
+</ScrollPane>

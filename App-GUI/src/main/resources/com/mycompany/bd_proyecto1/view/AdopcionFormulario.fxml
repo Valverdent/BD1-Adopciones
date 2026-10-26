@@ -144,6 +144,7 @@
                 </placeholder>
             </TableView>
             <Label fx:id="lblTotalSeguimientos" styleClass="texto-total"/>
+            <Label text="Haga doble clic en un seguimiento para ver su foto." styleClass="texto-secundario"/>
 
             <VBox fx:id="panelNuevoSeguimiento" spacing="4">
                 <Label text="Nuevo seguimiento" styleClass="seccion-titulo"/>

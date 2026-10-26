@@ -3,6 +3,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -25,6 +27,11 @@
             <padding>
                 <Insets top="12" right="20" bottom="12" left="20"/>
             </padding>
+            <ImageView fitWidth="40" fitHeight="40" preserveRatio="true" smooth="false">
+                <image>
+                    <Image url="@../img/logo.png"/>
+                </image>
+            </ImageView>
             <Label text="Bienestar Animal" styleClass="titulo-barra"/>
             <Region HBox.hgrow="ALWAYS"/>
             <VBox alignment="CENTER_RIGHT">

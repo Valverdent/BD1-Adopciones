@@ -5,6 +5,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -15,6 +16,10 @@ import javafx.scene.layout.VBox;
  * @since 2026-10-22
  */
 final class VistaFoto {
+
+    /** Tamaño máximo con que se muestra la foto (se ajusta sin deformarla). */
+    private static final double ANCHO = 520;
+    private static final double ALTO = 400;
 
     private VistaFoto() {
         // Clase de utilidad: no se instancia.
@@ -28,7 +33,7 @@ final class VistaFoto {
         Image imagen;
         try {
             // Se descarga en segundo plano, ajustada a 520 x 400 sin deformarla
-            imagen = new Image(enlace.trim(), 520, 400, true, true, true);
+            imagen = new Image(enlace.trim(), ANCHO, ALTO, true, true, true);
         } catch (IllegalArgumentException e) {
             Alertas.mostrarError(titulo, "El enlace no es válido.");
             return;
@@ -46,12 +51,24 @@ final class VistaFoto {
             }
         });
 
+        // La ventana se abre antes de que termine la descarga: se reserva el espacio de la
+        // foto desde el inicio para que no quede del tamaño de una imagen vacía y la recorte.
+        ImageView vista = new ImageView(imagen);
+        vista.setFitWidth(ANCHO);
+        vista.setFitHeight(ALTO);
+        vista.setPreserveRatio(true);
+        StackPane marco = new StackPane(vista);
+        marco.setMinSize(ANCHO, ALTO);
+        marco.setPrefSize(ANCHO, ALTO);
+
         Alert ventana = new Alert(Alert.AlertType.INFORMATION);
         ventana.setTitle(titulo);
         ventana.setHeaderText(null);
+        ventana.setGraphic(null);
+        ventana.setResizable(true);
         estado.setWrapText(true);
-        estado.setMaxWidth(520);
-        ventana.getDialogPane().setContent(new VBox(10, estado, new ImageView(imagen)));
+        estado.setMaxWidth(ANCHO);
+        ventana.getDialogPane().setContent(new VBox(10, estado, marco));
         ventana.showAndWait();
     }
 }

@@ -5,12 +5,14 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <!--
-  Pantalla de inicio de sesión. El logo original del equipo se agregará cuando esté
-  disponible.
+  Pantalla de inicio de sesión, con el logo del equipo arriba.
   Controlador: LoginController
   Autor: Carlos Hidalgo
   Creación: 2026-10-13
@@ -23,6 +25,15 @@
         <padding>
             <Insets top="32" right="32" bottom="32" left="32"/>
         </padding>
+
+        <!-- Logo en pixel art: smooth="false" para que no se vea borroso -->
+        <HBox alignment="CENTER">
+            <ImageView fitWidth="100" fitHeight="100" preserveRatio="true" smooth="false">
+                <image>
+                    <Image url="@../img/logo.png"/>
+                </image>
+            </ImageView>
+        </HBox>
 
         <Label text="Bienestar Animal" styleClass="titulo-app"/>
         <Label text="Iniciar sesión" styleClass="subtitulo"/>

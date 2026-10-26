@@ -6,6 +6,7 @@ import java.net.URL;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
@@ -20,6 +21,7 @@ public final class Navegador {
     private static final String RUTA_VISTAS = "/com/mycompany/bd_proyecto1/view/";
     private static final String HOJA_ESTILOS = "/com/mycompany/bd_proyecto1/css/estilos.css";
     private static final String TITULO_APP = "Bienestar Animal";
+    private static final String LOGO = "/com/mycompany/bd_proyecto1/img/logo.png";
 
     private static Stage ventana;
     private static StackPane areaContenido;
@@ -31,6 +33,8 @@ public final class Navegador {
     /** Debe llamarse una vez al iniciar la aplicación. */
     public static void inicializar(Stage ventanaPrincipal) {
         ventana = ventanaPrincipal;
+        // Logo del equipo como ícono de la ventana y de la barra de tareas
+        ventana.getIcons().add(new Image(obtenerRecurso(LOGO).toExternalForm()));
     }
 
     public static void mostrarLogin() {

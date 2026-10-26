@@ -1,10 +1,4 @@
-/* Package:     pkg_administration_donation_association
- * Descripción: Asociaciones de bienestar animal, donaciones (voluntarias y por porcentaje), reportes y estadística.
- */
-------------------------------------------------------------------------------
----------------------------- ESPECIFICACIÓN ----------------------------------
-------------------------------------------------------------------------------
-CREATE OR REPLACE PACKAGE pkg_administration_donation_association AS
+create or replace PACKAGE pkg_administration_donation_association AS
 
 -- Códigos de resultado
 c_exito                CONSTANT NUMBER := 0;
@@ -55,13 +49,15 @@ PROCEDURE pr_get_donation_history (
    pnId_association  IN  NUMBER,
    p_cursor          OUT SYS_REFCURSOR);
 
+-- Cambia el monto total de una donación: recalcula el monto de cada asociación con su
+-- porcentaje, igual que pr_register_donation (el trigger de DonationDetail lo registra en la bitácora)
+PROCEDURE pr_update_donation_amount (
+   pnId_donation  IN  NUMBER,
+   pnAmount       IN  NUMBER,
+   pnResult       OUT NUMBER);
 END pkg_administration_donation_association;
-/
 
----------------------------------------------------------------------------------
-------------------------------- CUERPO ------------------------------------------
----------------------------------------------------------------------------------
-CREATE OR REPLACE PACKAGE BODY pkg_administration_donation_association AS
+create or replace PACKAGE BODY pkg_administration_donation_association AS
 
 -- Errores con nombre propio (para atraparlos en el EXCEPTION)
 eDatoNulo     EXCEPTION;
@@ -91,7 +87,7 @@ BEGIN
    INTO vnTest
    FROM animalWelfareAssociation
    WHERE name = LOWER(TRIM(pcName));
-   
+
    RETURN 1;
 EXCEPTION                         -- Manejo de excepciones
    WHEN NO_DATA_FOUND THEN
@@ -122,16 +118,16 @@ BEGIN
    pnId_association := vnId_association;
 
 EXCEPTION                                    -- Manejo de excepciones
-   WHEN DUP_VAL_ON_INDEX THEN       
+   WHEN DUP_VAL_ON_INDEX THEN
       ROLLBACK;
       pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN         
+   WHEN eFkNoExiste THEN
       ROLLBACK;
       pnResult := c_referencia_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN  
+   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
       ROLLBACK;
       pnResult := c_dato_invalido;
-   WHEN OTHERS THEN               
+   WHEN OTHERS THEN
       ROLLBACK;
       pnResult := c_error_bd;
 END pr_register_association;
@@ -164,7 +160,7 @@ BEGIN
       pnResult := vnUpdate_result;
       RETURN;
    END IF;
- 
+
    -- Actualiza el nombre de la associaation
    UPDATE animalWelfareAssociation
    SET name = TRIM(pcName)
@@ -173,16 +169,16 @@ BEGIN
    COMMIT;
 
 EXCEPTION                                  -- Manejo de excepciones
-   WHEN DUP_VAL_ON_INDEX THEN 
+   WHEN DUP_VAL_ON_INDEX THEN
       ROLLBACK;
       pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN       
+   WHEN eFkNoExiste THEN
       ROLLBACK;
       pnResult := c_referencia_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN  
+   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
       ROLLBACK;
       pnResult := c_dato_invalido;
-   WHEN OTHERS THEN           
+   WHEN OTHERS THEN
       ROLLBACK;
       pnResult := c_error_bd;
 END pr_update_association;
@@ -208,25 +204,25 @@ BEGIN
          pv.id AS provinceId,
          pv.name AS provinceName,
          -- Atributos calculados basados en donationDetail
-         NVL((SELECT COUNT(1) 
-              FROM donationDetail dd 
+         NVL((SELECT COUNT(1)
+              FROM donationDetail dd
               WHERE dd.idAnimalWelfareAssociation = a.id), 0) AS donationCount,
-         NVL((SELECT SUM(dd.amount) 
-              FROM donationDetail dd 
+         NVL((SELECT SUM(dd.amount)
+              FROM donationDetail dd
               WHERE dd.idAnimalWelfareAssociation = a.id), 0) AS totalAmount
       FROM animalWelfareAssociation a
       INNER JOIN location lo
       ON lo.id = a.idLocation
-      
+
       INNER JOIN district di
       ON di.id = lo.idDistrict
-      
+
       INNER JOIN canton ca
       ON ca.id = di.idCanton
-      
+
       INNER JOIN province pv
       ON pv.id = ca.idProvince
-      
+
       WHERE a.id  = NVL(pnId_association, a.id)
         AND pv.id = NVL(pnId_province, pv.id)
         AND ca.id = NVL(pnId_canton, ca.id)
@@ -276,11 +272,11 @@ BEGIN
    WHILE INSTR(vcList, ',') > 0 LOOP
       vcPair := SUBSTR(vcList, 1, INSTR(vcList, ',') - 1);
       vcList := SUBSTR(vcList, INSTR(vcList, ',') + 1);
-      
+
       vnId_association := TO_NUMBER(SUBSTR(vcPair, 1, INSTR(vcPair, ':') - 1));
       vnPercentage     := TO_NUMBER(SUBSTR(vcPair, INSTR(vcPair, ':') + 1));
-      
-      -- Calcula el monto para este porcentaje entero 
+
+      -- Calcula el monto para este porcentaje entero
       vnDetail_amount  := TRUNC(vnAmount * vnPercentage / 100, 2);
 
       INSERT INTO donationDetail (idAnimalWelfareAssociation, idDonation, amount, percentage)
@@ -331,19 +327,19 @@ BEGIN
       FROM donation d
       INNER JOIN donationDetail dd
       ON dd.idDonation = d.id
-      
+
       INNER JOIN animalWelfareAssociation a
       ON a.id = dd.idAnimalWelfareAssociation
-      
+
       INNER JOIN person p
       ON p.id = d.idPerson
-      
+
       INNER JOIN currencyType c
       ON c.id = d.idCurrencyType
-      
+
       INNER JOIN donationType dt
       ON dt.id = d.idDonationType
-      
+
       WHERE p.id = NVL(pnId_person, p.id)
         AND a.id = NVL(pnId_association, a.id)
         AND d.donationDate >= NVL(pdDate_from, d.donationDate)
@@ -352,5 +348,43 @@ BEGIN
 END pr_get_donation_history;
 
 
+-----------------------------------------------------------------------------------
+--------------------------- Cambio de monto de donación ---------------------------
+-----------------------------------------------------------------------------------
+-- Procedimiento que cambia el monto total de una donación. El monto de cada asociación se
+-- recalcula con su porcentaje entero, con el mismo cálculo de pr_register_donation.
+PROCEDURE pr_update_donation_amount (
+   pnId_donation  IN  NUMBER,
+   pnAmount       IN  NUMBER,
+   pnResult       OUT NUMBER)
+AS
+BEGIN
+   pnResult := c_exito;
+
+   IF pnAmount IS NULL OR pnAmount <= 0 THEN       -- Monto vacío o no positivo
+      pnResult := c_dato_invalido;
+      RETURN;
+   END IF;
+
+   UPDATE donationDetail
+   SET amount = TRUNC(pnAmount * percentage / 100, 2)
+   WHERE idDonation = pnId_donation;
+
+   IF SQL%ROWCOUNT = 0 THEN                         -- La donación no existe o no tiene detalle
+      ROLLBACK;
+      pnResult := c_referencia_no_existe;
+      RETURN;
+   END IF;
+
+   COMMIT;
+
+EXCEPTION                                       -- Manejo de excepciones
+   WHEN eDatoNuloUpd OR eNumeroGrande OR eCheckViolado THEN
+      ROLLBACK;
+      pnResult := c_dato_invalido;
+   WHEN OTHERS THEN
+      ROLLBACK;
+      pnResult := c_error_bd;
+END pr_update_donation_amount;
+
 END pkg_administration_donation_association;
-/

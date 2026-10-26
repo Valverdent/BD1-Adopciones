@@ -1,10 +1,4 @@
-/* Package:     pkg_pet_administration
- * Descripción: Administrar registros de mascotas y datos relacionados. Además de las estadísticas y consultas asociadas 
- */
-------------------------------------------------------------------------------
----------------------------- ESPECIFICACIÓN ----------------------------------
-------------------------------------------------------------------------------
-CREATE OR REPLACE PACKAGE pkg_pet_administration AS
+create or replace PACKAGE pkg_pet_administration AS
 
 -- Códigos de resultado
 c_exito                CONSTANT NUMBER := 0;
@@ -29,8 +23,8 @@ PROCEDURE pr_register_pet (
    pnId_pet_status        IN  NUMBER,
    pnId_veterinarian      IN  NUMBER,
    pnId_foster_home       IN  NUMBER,
-   pnId_district          IN  NUMBER,   
-   pcAddress              IN  VARCHAR2, 
+   pnId_district          IN  NUMBER,
+   pcAddress              IN  VARCHAR2,
    pcChip_id              IN  VARCHAR2,
    pcName                 IN  VARCHAR2,
    pnRequires_space       IN  NUMBER,
@@ -52,8 +46,8 @@ PROCEDURE pr_update_pet (
    pnId_pet_status        IN  NUMBER,
    pnId_veterinarian      IN  NUMBER,
    pnId_foster_home       IN  NUMBER,
-   pnId_district          IN  NUMBER,  
-   pcAddress              IN  VARCHAR2, 
+   pnId_district          IN  NUMBER,
+   pcAddress              IN  VARCHAR2,
    pcChip_id              IN  VARCHAR2,
    pcName                 IN  VARCHAR2,
    pnRequires_space       IN  NUMBER,
@@ -107,6 +101,11 @@ PROCEDURE pr_get_pet_diseases (
    pnId_pet  IN  NUMBER,
    p_cursor  OUT SYS_REFCURSOR);
 
+-- Tratamientos de una enfermedad con su duración y, por cada uno, sus medicamentos y dosis
+PROCEDURE pr_get_disease_treatments (
+   pnId_disease  IN  NUMBER,
+   p_cursor      OUT SYS_REFCURSOR);
+
 PROCEDURE pr_get_pet_contacts (
    pnId_pet  IN  NUMBER,
    p_cursor  OUT SYS_REFCURSOR);
@@ -123,12 +122,8 @@ PROCEDURE pr_job_match_exec(
    pv_brevo_sender IN VARCHAR2 DEFAULT 'javalgonz@gmail.com');
 
 END pkg_pet_administration;
-/
 
----------------------------------------------------------------------------------
-------------------------------- CUERPO ------------------------------------------
----------------------------------------------------------------------------------
-CREATE OR REPLACE PACKAGE BODY pkg_pet_administration AS
+create or replace PACKAGE BODY pkg_pet_administration AS
 
 -- Errores con nombre propio (para atraparlos en el EXCEPTION)
 eDatoNulo     EXCEPTION;
@@ -159,7 +154,7 @@ BEGIN
    WHERE chipId = TRIM(pcChip_id);
 
    RETURN 1;
-EXCEPTION                                        -- Manejo de excepciones 
+EXCEPTION                                        -- Manejo de excepciones
    WHEN NO_DATA_FOUND THEN
       RETURN 0; -- Si no lo encontró, atrapa el error y retorna 0
 END fn_chipId_exists;
@@ -214,17 +209,17 @@ BEGIN
    COMMIT;
    pnId_pet := vnId_pet;
 
-EXCEPTION                                             -- Manejo de excepciones 
-   WHEN DUP_VAL_ON_INDEX THEN                                          
+EXCEPTION                                             -- Manejo de excepciones
+   WHEN DUP_VAL_ON_INDEX THEN
       ROLLBACK;
       pnResult := c_chip_existe;
-   WHEN eFkNoExiste THEN                                               
+   WHEN eFkNoExiste THEN
       ROLLBACK;
       pnResult := c_referencia_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eCheckViolado THEN  
+   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eCheckViolado THEN
       ROLLBACK;
       pnResult := c_dato_invalido;
-   WHEN OTHERS THEN                                                   
+   WHEN OTHERS THEN
       ROLLBACK;
       pnResult := c_error_bd;
 END pr_register_pet;
@@ -252,7 +247,7 @@ PROCEDURE pr_update_pet (
    pnEstimated_age        IN  NUMBER,
    pdEvent_date           IN  DATE,
    pnResult               OUT NUMBER)
-AS 
+AS
    vnId_location    NUMBER;
    vnUpdate_result  NUMBER;
 BEGIN
@@ -304,7 +299,7 @@ BEGIN
 
    COMMIT;
 
-EXCEPTION                                 -- Manejo de excepciones 
+EXCEPTION                                 -- Manejo de excepciones
    WHEN NO_DATA_FOUND THEN
       ROLLBACK;
       pnResult := c_referencia_no_existe;
@@ -341,11 +336,11 @@ BEGIN
    VALUES (s_reward.NEXTVAL, pnId_pet, pnId_currency_type, pnReward_amount);
 
    COMMIT;
-EXCEPTION                                       -- Manejo de excepciones                                    
+EXCEPTION                                       -- Manejo de excepciones
    WHEN DUP_VAL_ON_INDEX THEN
       ROLLBACK;
       pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN                                               
+   WHEN eFkNoExiste THEN
       ROLLBACK;
       pnResult := c_referencia_no_existe;
    WHEN eDatoNulo OR eDatoLargo OR eCheckViolado THEN
@@ -373,7 +368,7 @@ BEGIN
    VALUES (pnId_disease, pnId_pet);
 
    COMMIT;
-EXCEPTION                              -- Manejo de excepciones 
+EXCEPTION                              -- Manejo de excepciones
    WHEN DUP_VAL_ON_INDEX THEN
       ROLLBACK;
       pnResult := c_dato_duplicado;
@@ -388,7 +383,7 @@ EXCEPTION                              -- Manejo de excepciones
       pnResult := c_error_bd;
 END pr_insert_disease;
 
--- Procedimiento para borrar una disease asociada a una mascota 
+-- Procedimiento para borrar una disease asociada a una mascota
 PROCEDURE pr_delete_disease (
    pnId_disease_remove IN NUMBER,
    pnId_pet            IN NUMBER,
@@ -412,7 +407,11 @@ END pr_delete_disease;
 -----------------------------------------------------------------------------------
 ------------------------------- Consultas -----------------------------------------
 -----------------------------------------------------------------------------------
--- Procedimiento de consulta de mascota con filtros en atributos 
+-- Procedimiento de consulta de mascota con filtros en atributos.
+-- Todos los filtros son opcionales (NULL = todos). El nombre se busca por coincidencia parcial.
+-- Corregido: incluye mascotas sin chip, sin ubicación o sin fecha, no repite filas cuando la
+-- mascota tiene varias enfermedades o recompensas (se muestra la recompensa más reciente) y,
+-- al final del cursor, devuelve los ids que la aplicación necesita para editar.
 PROCEDURE pr_query_pets (
    pnId_pet               IN  NUMBER,
    pcName                 IN  VARCHAR2,
@@ -462,7 +461,26 @@ BEGIN
              cu.name            AS currencyName,
              rw.amount          AS rewardAmount,
              p.notesDescription,
-             p.abandonmentNotesDescription
+             p.abandonmentNotesDescription,
+             -- Columnas agregadas (ids para editar la mascota)
+             p.idPetStatus,
+             pb.idPetType,
+             p.idPetBreed,
+             p.idPetSize,
+             p.idPetColor,
+             p.idPetEnergy,
+             p.idPetSeverity,
+             p.idPetTrainability,
+             cn.id              AS countryId,
+             cn.name            AS countryName,
+             pv.id              AS provinceId,
+             ca.id              AS cantonId,
+             di.id              AS districtId,
+             lo.id              AS locationId,
+             p.idVeterinarian   AS veterinarianId,
+             TRIM(pvt.firstName || ' ' || pvt.firstLastName || ' ' || pvt.secondLastName) AS veterinarianName,
+             rw.id              AS rewardId,
+             rw.idCurrencyType  AS currencyId
       FROM pet p
       INNER JOIN petStatus st ON st.id = p.idPetStatus
       INNER JOIN petBreed pb ON pb.id = p.idPetBreed
@@ -472,34 +490,41 @@ BEGIN
       INNER JOIN petEnergy en ON en.id = p.idPetEnergy
       INNER JOIN petSeverity sv ON sv.id = p.idPetSeverity
       INNER JOIN petTrainability tr ON tr.id = p.idPetTrainability
-      INNER JOIN location lo ON lo.id = p.idLocation
-      INNER JOIN district di ON di.id = lo.idDistrict
-      INNER JOIN canton ca ON ca.id = di.idCanton
-      INNER JOIN province pv ON pv.id = ca.idProvince
       INNER JOIN person pe ON pe.id = p.idPerson
+      LEFT  JOIN location lo ON lo.id = p.idLocation
+      LEFT  JOIN district di ON di.id = lo.idDistrict
+      LEFT  JOIN canton ca ON ca.id = di.idCanton
+      LEFT  JOIN province pv ON pv.id = ca.idProvince
+      LEFT  JOIN country cn ON cn.id = pv.idCountry
       LEFT  JOIN person pf ON pf.id = p.idFosterHome
-      LEFT  JOIN reward rw ON rw.idPet = p.id
+      LEFT  JOIN veterinarian vt ON vt.id = p.idVeterinarian
+      LEFT  JOIN person pvt ON pvt.id = vt.idPerson
+      LEFT  JOIN reward rw ON rw.id = (SELECT MAX(r2.id)          -- Recompensa más reciente
+                                       FROM reward r2
+                                       WHERE r2.idPet = p.id)
       LEFT  JOIN currencyType cu ON cu.id = rw.idCurrencyType
-      LEFT  JOIN disease_x_pet dp ON dp.idPet = p.id
-      WHERE p.id = NVL(pnId_pet, p.id)
-      AND LOWER(p.name) = NVL(LOWER(TRIM(pcName)), LOWER(p.name))
-      AND p.chipId = NVL(TRIM(pcChip_id), p.chipId)
-      AND p.idPetStatus = NVL(pnId_pet_status, p.idPetStatus)
-      AND pb.idPetType = NVL(pnId_pet_type, pb.idPetType)
-      AND p.idPetBreed = NVL(pnId_pet_breed, p.idPetBreed)
-      AND p.idPetSize = NVL(pnId_pet_size, p.idPetSize)
-      AND p.idPetColor = NVL(pnId_pet_color, p.idPetColor)
-      AND pv.id = NVL(pnId_province, pv.id)
-      AND ca.id = NVL(pnId_canton, ca.id)
-      AND di.id = NVL(pnId_district, di.id)
-      AND NVL(p.idFosterHome, 0) = NVL(pnId_foster_home, NVL(p.idFosterHome, 0))
-      AND p.idPetSeverity = NVL(pnId_pet_severity, p.idPetSeverity)
-      AND p.idPetEnergy = NVL(pnId_pet_energy, p.idPetEnergy)
-      AND p.idPetTrainability = NVL(pnId_pet_trainability, p.idPetTrainability)
-      AND NVL(dp.idDisease, 0) = NVL(pnId_disease, NVL(dp.idDisease, 0))
-      AND p.idPerson = NVL(pnId_person, p.idPerson)
-      AND p.eventDate >= NVL(pdDate_from, p.eventDate)
-      AND p.eventDate < NVL(TRUNC(pdDate_to) + 1, p.eventDate + 1)
+      WHERE (pnId_pet IS NULL OR p.id = pnId_pet)
+      AND (TRIM(pcName) IS NULL OR LOWER(p.name) LIKE '%' || LOWER(TRIM(pcName)) || '%')
+      AND (TRIM(pcChip_id) IS NULL OR p.chipId = TRIM(pcChip_id))
+      AND (pnId_pet_status IS NULL OR p.idPetStatus = pnId_pet_status)
+      AND (pnId_pet_type IS NULL OR pb.idPetType = pnId_pet_type)
+      AND (pnId_pet_breed IS NULL OR p.idPetBreed = pnId_pet_breed)
+      AND (pnId_pet_size IS NULL OR p.idPetSize = pnId_pet_size)
+      AND (pnId_pet_color IS NULL OR p.idPetColor = pnId_pet_color)
+      AND (pnId_province IS NULL OR pv.id = pnId_province)
+      AND (pnId_canton IS NULL OR ca.id = pnId_canton)
+      AND (pnId_district IS NULL OR di.id = pnId_district)
+      AND (pnId_foster_home IS NULL OR p.idFosterHome = pnId_foster_home)
+      AND (pnId_pet_severity IS NULL OR p.idPetSeverity = pnId_pet_severity)
+      AND (pnId_pet_energy IS NULL OR p.idPetEnergy = pnId_pet_energy)
+      AND (pnId_pet_trainability IS NULL OR p.idPetTrainability = pnId_pet_trainability)
+      AND (pnId_disease IS NULL OR EXISTS (SELECT 1
+                                           FROM disease_x_pet dp
+                                           WHERE dp.idPet = p.id
+                                           AND dp.idDisease = pnId_disease))
+      AND (pnId_person IS NULL OR p.idPerson = pnId_person)
+      AND (pdDate_from IS NULL OR p.eventDate >= TRUNC(pdDate_from))
+      AND (pdDate_to IS NULL OR p.eventDate < TRUNC(pdDate_to) + 1)
       ORDER BY p.eventDate DESC NULLS LAST, p.id DESC;
 END pr_query_pets;
 
@@ -532,12 +557,38 @@ BEGIN
 
    pkg_person_administration.pr_get_person_contacts(vnId_person, p_cursor);
 
-EXCEPTION                                     -- Manejo de excepciones 
+EXCEPTION                                     -- Manejo de excepciones
    WHEN NO_DATA_FOUND THEN
       NULL;
    WHEN OTHERS THEN
       NULL;
 END pr_get_pet_contacts;
+
+-----------------------------------------------------------------------------------
+------------------------ Tratamientos de una enfermedad ---------------------------
+-----------------------------------------------------------------------------------
+-- Procedimiento que retorna los tratamientos de una enfermedad (con su duración) y los
+-- medicamentos de cada tratamiento (con su dosis). Una fila por tratamiento y medicamento;
+-- un tratamiento sin medicamentos aparece una vez con el medicamento en NULL.
+PROCEDURE pr_get_disease_treatments (
+   pnId_disease  IN  NUMBER,
+   p_cursor      OUT SYS_REFCURSOR)
+AS
+BEGIN
+   OPEN p_cursor FOR
+      SELECT t.id          AS treatmentId,
+             t.name        AS treatmentName,
+             td.timeLength,
+             m.id          AS medicationId,
+             m.name        AS medicationName,
+             mt.dosage
+      FROM treatment_x_disease td
+      INNER JOIN treatment t ON t.id = td.idTreatment
+      LEFT  JOIN medication_x_treatment mt ON mt.idTreatment = t.id
+      LEFT  JOIN medication m ON m.id = mt.idMedication
+      WHERE td.idDisease = pnId_disease
+      ORDER BY t.name, m.name;
+END pr_get_disease_treatments;
 
 -----------------------------------------------------------------------------------
 -------------------- Mascotas sin adoptar y match perdidas/encontradas ------------
@@ -570,7 +621,7 @@ BEGIN
       LEFT JOIN adoption a ON a.idPet = p.id
       WHERE st.name = vcStatus_in_adoption
       AND p.eventDate <= ADD_MONTHS(SYSDATE, -vnMonths)
-      AND a.id IS NULL 
+      AND a.id IS NULL
       ORDER BY p.eventDate;
 
 EXCEPTION                                        -- Manejo de excepciones
@@ -663,10 +714,10 @@ EXCEPTION                                   -- Manejo de excepciones
       pnResult := c_error_bd;
 END pr_match_lost_found;
 
--- Procedimiento llamado por el JOB 
+-- Procedimiento llamado por el JOB
 PROCEDURE pr_job_match_exec (
    pv_brevo_sender IN VARCHAR2 DEFAULT 'javalgonz@gmail.com'
-) AS 
+) AS
    v_cursor SYS_REFCURSOR;
    v_result NUMBER;
 
@@ -692,7 +743,7 @@ PROCEDURE pr_job_match_exec (
 
    rec t_match_rec;
    v_html_body VARCHAR2(4000);
-BEGIN 
+BEGIN
    pr_match_lost_found(v_cursor, v_result);
 
    IF v_result = 0 AND v_cursor IS NOT NULL THEN
@@ -712,7 +763,7 @@ BEGIN
 
       CLOSE v_cursor;
 
-      -- Servicio de envios de correo 
+      -- Servicio de envios de correo
       FOR p IN (
          -- SELECT DISTINCT para que no devuelva el mismo dato (id, correo) más de una vez
          SELECT DISTINCT p.id AS person_id, ce.email, p.firstName || ' ' || p.firstLastName AS person_name
@@ -733,8 +784,8 @@ BEGIN
             JOIN Pet pf ON pm.idFoundPet = pf.id
             WHERE (pl.idPerson = p.person_id OR pf.idPerson = p.person_id)
                       AND pm.notified = 0
-         ) LOOP 
-            v_html_body := v_html_body || 
+         ) LOOP
+            v_html_body := v_html_body ||
                '<li style="margin-bottom: 15px; list-style: none;">' ||
                '  <table style="border-collapse: collapse;">' ||
                '    <tr>' ||
@@ -772,4 +823,3 @@ BEGIN
 END pr_job_match_exec;
 
 END pkg_pet_administration;
-/

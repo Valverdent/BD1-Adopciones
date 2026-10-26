@@ -1,11 +1,4 @@
-/* Package:     pkg_statistics
- * Descripción: Manejo de y procesamiento de datos para estadísticas disponibles en capa de presentación  
- */
-------------------------------------------------------------------------------
----------------------------- ESPECIFICACIÓN ----------------------------------
-------------------------------------------------------------------------------
-
-CREATE OR REPLACE PACKAGE pkg_statistics AS
+create or replace PACKAGE pkg_statistics AS
 
 -- Códigos de resultado
     c_exito                CONSTANT NUMBER := 0;
@@ -50,12 +43,9 @@ CREATE OR REPLACE PACKAGE pkg_statistics AS
         p_cursor    OUT SYS_REFCURSOR,
         pnResult    OUT NUMBER);
 END pkg_statistics;
-/
 
----------------------------------------------------------------------------------
-------------------------------- CUERPO ------------------------------------------
----------------------------------------------------------------------------------
-CREATE OR REPLACE PACKAGE BODY pkg_statistics AS
+
+create or replace PACKAGE BODY pkg_statistics AS
 --------------------------------------------------
 -- Cantidad total de mascotas por tipo y estado --
 --------------------------------------------------
@@ -305,5 +295,3 @@ EXCEPTION
 END pr_stat_pets_by_canton;
 
 END pkg_statistics;
-/
-

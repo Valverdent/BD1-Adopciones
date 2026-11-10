@@ -416,12 +416,12 @@ CREATE TABLE IF NOT EXISTS FosterHome_x_petSize (
     CONSTRAINT fosterHome_x_petSize_petSize_fk FOREIGN KEY (idPetSize) REFERENCES PetSize (id)
 );
 
-CREATE TABLE IF NOT EXISTS FosterHome_x_petBreed (
+CREATE TABLE IF NOT EXISTS FosterHome_x_petType (
     idFosterHome    INT(7),
-    idPetBreed      INT(7),
+    idPetType      INT(7),
 
-    PRIMARY KEY (idFosterHome, idPetBreed),
-    CONSTRAINT fosterHome_x_petBreed_fosterHome_fk FOREIGN KEY (idFosterHome) REFERENCES FosterHome (idFosterHome),
-    CONSTRAINT fosterHome_x_petBreed_petBreed_fk FOREIGN KEY (idPetBreed) REFERENCES PetBreed (id)
+    PRIMARY KEY (idFosterHome, idPetType),
+    CONSTRAINT fosterHome_x_petType_fosterHome_fk FOREIGN KEY (idFosterHome) REFERENCES FosterHome (idFosterHome),
+    CONSTRAINT fosterHome_x_petType_petType_fk FOREIGN KEY (idPetBreed) REFERENCES PetType (id)
 );
 

@@ -1,106 +1,57 @@
-create or replace PACKAGE pkg_parameter AS
-
--- Códigos de resultado
-c_exito                CONSTANT NUMBER := 0;
-c_dato_duplicado       CONSTANT NUMBER := 1004;
-c_parametro_faltante   CONSTANT NUMBER := 1020;
-c_dato_invalido        CONSTANT NUMBER := 1030;
-c_referencia_no_existe CONSTANT NUMBER := 1100;
-c_error_bd             CONSTANT NUMBER := 9000;
-
-FUNCTION fn_get_text (pcName IN VARCHAR2) RETURN VARCHAR2;
-FUNCTION fn_get_number (pcName IN VARCHAR2) RETURN NUMBER;
-
-PROCEDURE pr_get_parameters (
-   pcName    IN  VARCHAR2, 
-   p_cursor  OUT SYS_REFCURSOR);
-
-PROCEDURE pr_insert_parameter (
-   pcName         IN  VARCHAR2,
-   pcDescription  IN  VARCHAR2,
-   pcText_value   IN  VARCHAR2,
-   pnNumber_value IN  NUMBER,
-   pnResult       OUT NUMBER);
-
-PROCEDURE pr_update_parameter (
-   pnId_parameter  IN  NUMBER,
-   pcText_value    IN  VARCHAR2,
-   pnNumber_value  IN  NUMBER,
-   pnResult        OUT NUMBER);
-
-PROCEDURE pr_delete_parameter (
-   pnId_parameter  IN  NUMBER,
-   pnResult        OUT NUMBER);
-
-END pkg_parameter;
-
-
-create or replace PACKAGE BODY pkg_parameter AS
-
--- Errores con nombre propio (para atraparlos en el EXCEPTION)
-eDatoNulo     EXCEPTION;
-PRAGMA EXCEPTION_INIT(eDatoNulo,     -1400);    -- NULL en columna NOT NULL
-eDatoLargo    EXCEPTION;
-PRAGMA EXCEPTION_INIT(eDatoLargo,    -12899);   -- texto mas largo que la columna
-eNumeroGrande EXCEPTION;
-PRAGMA EXCEPTION_INIT(eNumeroGrande, -1438);    -- numero con mas digitos de los permitidos
-eCheckViolado EXCEPTION;
-PRAGMA EXCEPTION_INIT(eCheckViolado, -2290);    -- CHECK: el parametro debe tener exactamente un valor
 
 -------------------------------------------------------------------------
 ------------------------- Getters de valores ----------------------------
 -------------------------------------------------------------------------
-
+DELIMITER //
 -- Función que retorna el valor del atributo textValue VARCHAR2 por medio del nombre del parametro
-FUNCTION fn_get_text (pcName IN VARCHAR2)
-RETURN VARCHAR2
-IS
-   vcValue parameter.textValue%TYPE;
+CREATE FUNCTION fn_get_text (pcName VARCHAR(255))
+RETURNS VARCHAR(255) READS SQL DATA
 BEGIN
+   vcValue vcValue VARCHAR(255);
+   DECLARE CONTINUE HANDLER FOR NOT FOUND SET vcValue = NULL; -- Manejo de excepciones para cuando no se encuentra el parámetro
+
    -- Busca el valor VARCHAR2 por medio de un filtro del nombre del parametro 
    SELECT textValue INTO vcValue
    FROM parameter
    WHERE name = pcName;
+   
    RETURN vcValue;
-EXCEPTION                                 -- Manejo de excepciones
-   WHEN NO_DATA_FOUND THEN                                                 
-      RETURN NULL;
-END fn_get_text;
+END //
 
 
 -- Función que retorna el valor del atributo numberValue NUMBER por medio del nombre del parametro
-FUNCTION fn_get_number (pcName IN VARCHAR2)
-RETURN NUMBER
-IS
-   vnValue parameter.numberValue%TYPE;
+CREATE FUNCTION fn_get_number (pcName VARCHAR(255))
+RETURNS DECIMAL(9,2) READS SQL DATA
 BEGIN
+   DECLARE vnValue DECIMAL(9,2);
+   DECLARE CONTINUE HANDLER FOR NOT FOUND SET vnValue = NULL; -- Manejo de excepciones para cuando no se encuentra el parámetro
+   
    -- Busca el valor NUMBER por medio de un filtro del nombre del parametro
    SELECT numberValue INTO vnValue
    FROM parameter
    WHERE name = pcName;
+   
    RETURN vnValue;
-EXCEPTION                                  -- Manejo de excepciones
-   WHEN NO_DATA_FOUND THEN                                                
-      RETURN NULL;
-END fn_get_number;
+END //
+DELIMITER ;
 
-
+DELIMITER //
 -- Procedimiento que retorna un cursor con los parámetros filtrados por nombre para la pantalla de administración
-PROCEDURE pr_get_parameters (
-   pcName    IN  VARCHAR2,
-   p_cursor  OUT SYS_REFCURSOR)
+CREATE PROCEDURE pr_get_parameters (
+   IN pcname VARCHAR(255))
 AS
 BEGIN
-   OPEN p_cursor FOR
-      SELECT id,
-             name,
-             description,
-             textValue,
-             numberValue
-      FROM parameter
-      WHERE LOWER(name) = NVL(LOWER(TRIM(pcName)), LOWER(name))            -- Si pcName es nulo, devuelve todos los parámetros
-      ORDER BY name;
-END pr_get_parameters;
+    SELECT id,
+        name,
+        description,
+        textValue,
+        numberValue
+    FROM Parameter
+    WHERE LOWER(name) = IFNULL(LOWER(TRIM(pcName)), LOWER(name))            -- Si pcName es nulo, devuelve todos los parámetros
+    ORDER BY name;
+END //
+
+DELIMITER ;
 
 -------------------------------------------------------------------------
 -----------------Inserción, modificación, eliminación -------------------
@@ -108,76 +59,68 @@ END pr_get_parameters;
 
 -- Procedimiento para registrar un nuevo parámetro en la base de datos
 PROCEDURE pr_insert_parameter (
-   pcName         IN  VARCHAR2,
-   pcDescription  IN  VARCHAR2,
-   pcText_value   IN  VARCHAR2,
-   pnNumber_value IN  NUMBER,
-   pnResult       OUT NUMBER)
-AS
+   IN pcName VARCHAR(255),
+   IN pcDescription VARCHAR(255),
+   IN pcText_value VARCHAR(255),
+   IN pnNumber_value DECIMAL(9,2),
+   OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+   -- Manejo de excepciones
+    DECLARE EXIT HANDLER FOR 1062 BEGIN SET pnResult = 1004; ROLLBACK; END; -- Dato duplicado
+    DECLARE EXIT HANDLER FOR 1048, 1406, 3819 BEGIN SET pnResult = 1030; ROLLBACK; END; -- Nulo, largo o check violado (en MySQL el check violation es 3819)
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET pnResult = 9000; ROLLBACK; END; -- Error general
 
-   -- Inserta el nuevo parámetro en la BD 
-   INSERT INTO parameter (id, name, description, textValue, numberValue)
-   VALUES (s_parameter.NEXTVAL, TRIM(pcName), TRIM(pcDescription), TRIM(pcText_value), pnNumber_value);
+    SET pnResult = 0;
 
-   COMMIT;
+    START TRANSACTION;
 
-EXCEPTION                                   -- Manejo de excepciones
-   WHEN DUP_VAL_ON_INDEX THEN                                            
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eCheckViolado OR eDatoNulo OR eDatoLargo OR eNumeroGrande THEN   
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN                                                       
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_insert_parameter;
-
+    -- Inserta el nuevo parámetro en la BD
+    INSERT INTO parameter (name, description, textValue, numberValue)
+    VALUES (TRIM(pcName), TRIM(pcDescription), TRIM(pcText_value), pnNumber_value);
+    COMMIT;
+END //
 
 -- Procedimiento para actualizar los valores (texto o numérico) de un parámetro existente
-PROCEDURE pr_update_parameter (
-   pnId_parameter  IN  NUMBER,
-   pcText_value    IN  VARCHAR2,
-   pnNumber_value  IN  NUMBER,
-   pnResult        OUT NUMBER)
-AS
-   vnTest NUMBER;
+CREATE PROCEDURE pr_update_parameter (
+    IN pnId_parameter INT,
+    IN pcText_value VARCHAR(255),
+    IN pnNumber_value DECIMAL(9,2),
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE vnTest INT;
 
-   -- Valida que existe el parametro en el sistema
-   SELECT 1
-   INTO vnTest
-   FROM parameter
-   WHERE id = pnId_parameter;
+    -- Manejo de excepciones
+    DECLARE EXIT HANDLER FOR 1048, 1406, 3819 BEGIN SET pnResult = 1030; ROLLBACK; END; -- Nulo, largo o check violado (en MySQL el check violation es 3819)
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET pnResult = 9000; ROLLBACK; END; -- Error general
 
-   -- Modifica únicamente el tipo de dato activo que ya tenía el parámetro (texto o número)
-   UPDATE parameter
-   SET textValue   = CASE 
-                        WHEN textValue IS NOT NULL OR numberValue IS NULL THEN TRIM(pcText_value) 
-                        ELSE NULL 
-                     END,
-       numberValue = CASE
-                        WHEN numberValue IS NOT NULL THEN pnNumber_value
-                        ELSE NULL 
-                     END
-   WHERE id = pnId_parameter;
+    SET pnResult = 0;
 
-   COMMIT;
+    -- Valida que existe el parametro en el sistema
+    SELECT 1
+    INTO vnTest
+    FROM parameter
+    WHERE id = pnId_parameter;
 
-EXCEPTION                                                   -- Manejo de excepciones
-   WHEN NO_DATA_FOUND THEN                                                
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-   WHEN eCheckViolado OR eDatoNulo OR eDatoLargo OR eNumeroGrande THEN     
-   ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN                                                       
-      ROLLBACK;  
-      pnResult := c_error_bd;
-END pr_update_parameter;
+    IF vnTest IS NULL THEN
+       SET pnResult = 1100; --Referencia no existente
+    ELSE
+        START TRANSACTION
+        -- Modifica únicamente el tipo de dato activo que ya tenía el parámetro (texto o número)
+        UPDATE parameter
+        SET textValue = CASE
+                            WHEN textValue IS NOT NULL OR numberValue IS NULL THEN TRIM(pcText_value)
+                            ELSE NULL
+                        END,
+            numberValue = CASE
+                            WHEN numberValue IS NOT NULL THEN pnNumber_value
+                            ELSE NULL
+                        END
+        WHERE id = pnId_parameter;
+        COMMIT;
+    END IF;
+END //
 
 
 -- Procedimiento para eliminar un parámetro del sistema por su ID

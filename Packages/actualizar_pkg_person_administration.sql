@@ -1,4 +1,52 @@
-create or replace PACKAGE pkg_person_administration AS
+-- ============================================================
+-- actualizar_pkg_person_administration.sql
+-- Actualiza PKG_PERSON_ADMINISTRATION (codigo tomado de la base el 22/10/2026).
+-- Cambios:
+--   Agrega pr_update_person_names (editar nombres de una persona).
+--   Agrega pr_update_foster_home (editar una casa cuna y lo que acepta).
+--   Agrega pr_delete_blacklist (sacar un reporte de la lista negra).
+-- No cambia la firma de ningun procedimiento existente.
+--
+-- ESCRIBE EN LA BASE. Ejecutar con F5 (Run Script), conectado como ADOPCION_APP.
+-- 1) Primero revisa que nadie haya modificado el paquete desde la revision;
+--    si cambio, se detiene SIN tocar nada.
+-- 2) Reemplaza la especificacion y el cuerpo.
+-- 3) Recompila lo que haya quedado invalido y muestra el estado (todo debe decir VALID).
+-- Para deshacer: ejecutar la seccion de este paquete en respaldo_paquetes_originales.sql.
+-- ============================================================
+SET DEFINE OFF
+SET SERVEROUTPUT ON
+WHENEVER SQLERROR EXIT SQL.SQLCODE
+
+DECLARE
+   vnLineas NUMBER;
+   vnChars  NUMBER;
+BEGIN
+   SELECT COUNT(*), NVL(SUM(LENGTH(RTRIM(text, CHR(10) || CHR(13) || ' '))), 0)
+   INTO vnLineas, vnChars
+   FROM user_source
+   WHERE name = 'PKG_PERSON_ADMINISTRATION' AND type = 'PACKAGE';
+   IF vnLineas <> 146 OR vnChars <> 4135 THEN
+      RAISE_APPLICATION_ERROR(-20010, 'PACKAGE PKG_PERSON_ADMINISTRATION cambio despues de la revision del 22/10 '
+         || '(lineas ' || vnLineas || ', esperado 146). No se ejecuta para no borrar ese cambio: '
+         || 'vuelva a exportar con extraer_especificaciones.sql y extraer_cuerpos.sql y pida el script de nuevo.');
+   END IF;
+   SELECT COUNT(*), NVL(SUM(LENGTH(RTRIM(text, CHR(10) || CHR(13) || ' '))), 0)
+   INTO vnLineas, vnChars
+   FROM user_source
+   WHERE name = 'PKG_PERSON_ADMINISTRATION' AND type = 'PACKAGE BODY';
+   IF vnLineas <> 737 OR vnChars <> 21770 THEN
+      RAISE_APPLICATION_ERROR(-20010, 'PACKAGE BODY PKG_PERSON_ADMINISTRATION cambio despues de la revision del 22/10 '
+         || '(lineas ' || vnLineas || ', esperado 737). No se ejecuta para no borrar ese cambio: '
+         || 'vuelva a exportar con extraer_especificaciones.sql y extraer_cuerpos.sql y pida el script de nuevo.');
+   END IF;
+   DBMS_OUTPUT.PUT_LINE('OK  PKG_PERSON_ADMINISTRATION sin cambios desde la revision.');
+END;
+/
+
+WHENEVER SQLERROR CONTINUE
+
+CREATE OR REPLACE PACKAGE pkg_person_administration AS
 
 -- Códigos de resultado (todos declarados para evitar el error PLS-00201)
 c_exito                CONSTANT NUMBER := 0;
@@ -172,9 +220,9 @@ PROCEDURE pr_delete_blacklist (
    pnResult        OUT NUMBER);
 
 END pkg_person_administration;
+/
 
-
-create or replace PACKAGE BODY pkg_person_administration AS
+CREATE OR REPLACE PACKAGE BODY pkg_person_administration AS
 
 -- Errores con nombre propio (para atraparlos en el EXCEPTION)
 eDatoNulo     EXCEPTION;
@@ -1071,3 +1119,19 @@ EXCEPTION
 END pr_delete_blacklist;
 
 END pkg_person_administration;
+/
+
+-- Recompila los objetos que dependian del paquete (solo los invalidos)
+BEGIN
+   DBMS_UTILITY.COMPILE_SCHEMA(schema => USER, compile_all => FALSE);
+END;
+/
+
+-- Comprobacion: todo debe decir VALID
+SHOW ERRORS PACKAGE PKG_PERSON_ADMINISTRATION
+SHOW ERRORS PACKAGE BODY PKG_PERSON_ADMINISTRATION
+SELECT object_name, object_type, status
+FROM user_objects
+WHERE object_type IN ('PACKAGE', 'PACKAGE BODY', 'TRIGGER', 'PROCEDURE', 'FUNCTION')
+AND (status <> 'VALID' OR object_name = 'PKG_PERSON_ADMINISTRATION')
+ORDER BY object_name, object_type;

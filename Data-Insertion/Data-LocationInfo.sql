@@ -1,32 +1,32 @@
---------------------------------------------------------------
+-- ------------------------------------------------------------
 -- Creacion tuplas relacionadas a ubicaciones en Costa Rica --
---------------------------------------------------------------
-
+-- ------------------------------------------------------------
+USE ADOPCION_APP;
 -- Creacion tupla de pais
---INSERT INTO COUNTRY (id, name)
---VALUES (s_country.NEXTVAL, 'Costa Rica');
+INSERT INTO Country (name)
+VALUES ('Costa Rica');
 
 -- Insercion tuplas de provincias
-INSERT INTO PROVINCE (id, idCountry, name)
-VALUES (s_province.NEXTVAL, 1, 'San José');
+INSERT INTO Province (idCountry, name)
+VALUES (1, 'San José');
 
-INSERT INTO PROVINCE (id, idCountry, name)
-VALUES (s_province.NEXTVAL, 1, 'Alajuela');
+INSERT INTO Province (idCountry, name)
+VALUES (1, 'Alajuela');
 
-INSERT INTO PROVINCE (id, idCountry, name)
-VALUES (s_province.NEXTVAL, 1, 'Cartago');
+INSERT INTO Province (idCountry, name)
+VALUES (1, 'Cartago');
 
-INSERT INTO PROVINCE (id, idCountry, name)
-VALUES (s_province.NEXTVAL, 1, 'Heredia');
+INSERT INTO Province (idCountry, name)
+VALUES (1, 'Heredia');
 
-INSERT INTO PROVINCE (id, idCountry, name)
-VALUES (s_province.NEXTVAL, 1, 'Guanacaste');
+INSERT INTO Province (idCountry, name)
+VALUES (1, 'Guanacaste');
 
-INSERT INTO PROVINCE (id, idCountry, name)
-VALUES (s_province.NEXTVAL, 1, 'Puntarenas');
+INSERT INTO Province (idCountry, name)
+VALUES (1, 'Puntarenas');
 
-INSERT INTO PROVINCE (id, idCountry, name)
-VALUES (s_province.NEXTVAL, 1, 'Limón');
+INSERT INTO Province (idCountry, name)
+VALUES (1, 'Limón');
 
 
 

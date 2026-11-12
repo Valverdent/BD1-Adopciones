@@ -29,6 +29,7 @@ BEGIN
     RETURN IF(vnCount > 0, 1, 0);
 END //
 
+DELIMITER //
 -- Función que verifica la existencia de un teléfono en la BD
 CREATE FUNCTION fn_phone_exists (pcPhone VARCHAR(255))
 RETURNS INT READS SQL DATA
@@ -89,7 +90,7 @@ BEGIN
     ELSE
         -- Rol y estado por defecto (parametrizados)
         SELECT id INTO vnId_role
-        FROM "Role"
+        FROM `Role`
         WHERE name = fn_get_text('DEFAULT_ROLE_NAME');
 
         SELECT id INTO vnId_status
@@ -113,7 +114,7 @@ BEGIN
                 ROLLBACK;
             ELSE
                 -- Inserta las credenciales del usuario con el Hash enviado en mayúsculas
-                INSERT INTO 'User' (idPerson, idRole, idUserStatus, username, password)
+                INSERT INTO `User` (idPerson, idRole, idUserStatus, username, password)
                 VALUES (vnId_person, vnId_role, vnId_status, TRIM(pcUsername),
                         UPPER(TRIM(pcPassword_hash)));
                 COMMIT;
@@ -136,11 +137,11 @@ BEGIN
         r.name AS roleName,
         s.name AS statusName
 
-    FROM 'User' u
+    FROM `User` u
     INNER JOIN Person p
     ON p.id = u.idPerson
 
-    INNER JOIN 'Role' r
+    INNER JOIN `Role` r
         ON r.id = u.idRole
 
     INNER JOIN UserStatus s

@@ -1,1137 +1,728 @@
--- ============================================================
--- actualizar_pkg_person_administration.sql
--- Actualiza PKG_PERSON_ADMINISTRATION (codigo tomado de la base el 22/10/2026).
--- Cambios:
---   Agrega pr_update_person_names (editar nombres de una persona).
---   Agrega pr_update_foster_home (editar una casa cuna y lo que acepta).
---   Agrega pr_delete_blacklist (sacar un reporte de la lista negra).
--- No cambia la firma de ningun procedimiento existente.
---
--- ESCRIBE EN LA BASE. Ejecutar con F5 (Run Script), conectado como ADOPCION_APP.
--- 1) Primero revisa que nadie haya modificado el paquete desde la revision;
---    si cambio, se detiene SIN tocar nada.
--- 2) Reemplaza la especificacion y el cuerpo.
--- 3) Recompila lo que haya quedado invalido y muestra el estado (todo debe decir VALID).
--- Para deshacer: ejecutar la seccion de este paquete en respaldo_paquetes_originales.sql.
--- ============================================================
-SET DEFINE OFF
-SET SERVEROUTPUT ON
-WHENEVER SQLERROR EXIT SQL.SQLCODE
+USE ADOPCION_APP;
 
-DECLARE
-   vnLineas NUMBER;
-   vnChars  NUMBER;
+-- -----------------------------------------------------------------------
+-- ----------------- Verificaciones de existencia ------------------------
+-- -----------------------------------------------------------------------
+DELIMITER //
+CREATE FUNCTION fn_person_exists (pnId_person INT)
+RETURNS INT DETERMINISTIC
 BEGIN
-   SELECT COUNT(*), NVL(SUM(LENGTH(RTRIM(text, CHR(10) || CHR(13) || ' '))), 0)
-   INTO vnLineas, vnChars
-   FROM user_source
-   WHERE name = 'PKG_PERSON_ADMINISTRATION' AND type = 'PACKAGE';
-   IF vnLineas <> 146 OR vnChars <> 4135 THEN
-      RAISE_APPLICATION_ERROR(-20010, 'PACKAGE PKG_PERSON_ADMINISTRATION cambio despues de la revision del 22/10 '
-         || '(lineas ' || vnLineas || ', esperado 146). No se ejecuta para no borrar ese cambio: '
-         || 'vuelva a exportar con extraer_especificaciones.sql y extraer_cuerpos.sql y pida el script de nuevo.');
-   END IF;
-   SELECT COUNT(*), NVL(SUM(LENGTH(RTRIM(text, CHR(10) || CHR(13) || ' '))), 0)
-   INTO vnLineas, vnChars
-   FROM user_source
-   WHERE name = 'PKG_PERSON_ADMINISTRATION' AND type = 'PACKAGE BODY';
-   IF vnLineas <> 737 OR vnChars <> 21770 THEN
-      RAISE_APPLICATION_ERROR(-20010, 'PACKAGE BODY PKG_PERSON_ADMINISTRATION cambio despues de la revision del 22/10 '
-         || '(lineas ' || vnLineas || ', esperado 737). No se ejecuta para no borrar ese cambio: '
-         || 'vuelva a exportar con extraer_especificaciones.sql y extraer_cuerpos.sql y pida el script de nuevo.');
-   END IF;
-   DBMS_OUTPUT.PUT_LINE('OK  PKG_PERSON_ADMINISTRATION sin cambios desde la revision.');
-END;
-/
+    DECLARE vnTest INT DEFAULT 0;
+    SELECT 1 INTO vnTest FROM Person WHERE id = pnId_person LIMIT 1;
+    RETURN vnTest;
+END//
 
-WHENEVER SQLERROR CONTINUE
-
-CREATE OR REPLACE PACKAGE pkg_person_administration AS
-
--- Códigos de resultado (todos declarados para evitar el error PLS-00201)
-c_exito                CONSTANT NUMBER := 0;
-c_dato_duplicado       CONSTANT NUMBER := 1004;
-c_persona_no_existe    CONSTANT NUMBER := 1010;
-c_ubicacion_no_existe  CONSTANT NUMBER := 1011;
-c_ultimo_contacto      CONSTANT NUMBER := 1012;   -- La persona debe conservar al menos un correo o un teléfono
-c_dato_invalido        CONSTANT NUMBER := 1030;
-c_referencia_no_existe CONSTANT NUMBER := 1100;
-c_error_bd             CONSTANT NUMBER := 9000;
-
-FUNCTION fn_person_exists (pnId_person IN NUMBER) RETURN NUMBER;
-FUNCTION fn_email_exists  (pcEmail     IN VARCHAR2) RETURN NUMBER;
-FUNCTION fn_phone_exists  (pcPhone     IN VARCHAR2) RETURN NUMBER;
-
--- Ubicación
-PROCEDURE pr_insert_location (
-   pnId_district  IN  NUMBER,
-   pcAddress      IN  VARCHAR2,
-   pnId_location  OUT NUMBER);
-
-PROCEDURE pr_update_location (
-   pnId_location  IN  NUMBER,
-   pnId_district  IN  NUMBER,
-   pcAddress      IN  VARCHAR2,
-   pnResult       OUT NUMBER);
-
--- Contactos de una persona (correos y teléfonos)
-PROCEDURE pr_add_email (
-   pnId_person IN  NUMBER,
-   pcEmail     IN  VARCHAR2,
-   pnResult    OUT NUMBER);
-
-PROCEDURE pr_delete_email (
-   pnId_person IN  NUMBER,
-   pnId_email  IN  NUMBER,
-   pnResult    OUT NUMBER);
-
-PROCEDURE pr_add_phone (
-   pnId_person IN  NUMBER,
-   pcPhone     IN  VARCHAR2,
-   pnResult    OUT NUMBER);
-
-PROCEDURE pr_delete_phone (
-   pnId_person IN  NUMBER,
-   pnId_phone  IN  NUMBER,
-   pnResult    OUT NUMBER);
-
-PROCEDURE pr_get_person_contacts (
-   pnId_person  IN  NUMBER,
-   p_cursor     OUT SYS_REFCURSOR);
-
--- Personas
-PROCEDURE pr_register_person (
-   pcFirst_name       IN  VARCHAR2,
-   pcMiddle_name      IN  VARCHAR2,
-   pcFirst_lastName   IN  VARCHAR2,
-   pcSecond_lastName  IN  VARCHAR2,
-   pnId_district      IN  NUMBER,
-   pcAddress          IN  VARCHAR2,
-   pcPhone            IN  VARCHAR2,
-   pcEmail            IN  VARCHAR2,
-   pnId_person        OUT NUMBER,
-   pnResult           OUT NUMBER);
-
-PROCEDURE pr_update_person_location (
-   pnId_person   IN  NUMBER,
-   pnId_district IN  NUMBER,
-   pcAddress     IN  VARCHAR2,
-   pnResult      OUT NUMBER);
-
-PROCEDURE pr_get_persons (
-   pnId_person    IN  NUMBER,
-   pnId_province  IN  NUMBER,
-   pnId_canton    IN  NUMBER,
-   pnId_district  IN  NUMBER,
-   p_cursor       OUT SYS_REFCURSOR);
-
--- Adoptantes
-PROCEDURE pr_register_adopter (
-   pnId_person         IN  NUMBER,
-   pnId_house_type     IN  NUMBER,
-   pnHas_yard          IN  NUMBER,
-   pnId_exercise_time  IN  NUMBER,
-   pcOther_pet_breeds  IN  VARCHAR2,
-   pnResult            OUT NUMBER);
-
-PROCEDURE pr_get_adopter (
-   pnId_adopter  IN  NUMBER,
-   p_cursor      OUT SYS_REFCURSOR);
-
-PROCEDURE pr_get_other_pets (
-   pnId_adopter  IN  NUMBER,
-   p_cursor      OUT SYS_REFCURSOR);
-
--- Casas cuna
-PROCEDURE pr_register_foster_home (
-   pnId_person               IN  NUMBER,
-   pnId_district             IN  NUMBER,
-   pcAddress                 IN  VARCHAR2,
-   pnId_foster_home_status   IN  NUMBER,
-   pnMax_capacity            IN  NUMBER,
-   pnRequires_food_donation  IN  NUMBER,
-   pcPet_types               IN  VARCHAR2,
-   pcPet_sizes               IN  VARCHAR2,
-   pnResult                  OUT NUMBER);
-
-PROCEDURE pr_get_foster_homes (
-   pnId_foster_home IN  NUMBER,
-   pnId_province    IN  NUMBER,
-   pnId_canton      IN  NUMBER,
-   pnId_district    IN  NUMBER,
-   pnId_pet_type    IN  NUMBER,
-   pnId_pet_size    IN  NUMBER,
-   pnOnly_available IN  NUMBER,
-   p_cursor         OUT SYS_REFCURSOR);
-
-PROCEDURE pr_get_foster_home_accepts (
-   pnId_foster_home  IN  NUMBER,
-   p_cursor          OUT SYS_REFCURSOR);
-
--- Veterinarios
-PROCEDURE pr_register_veterinarian (
-   pnId_person        IN  NUMBER,
-   pnId_veterinarian  OUT NUMBER,
-   pnResult           OUT NUMBER);
-
-PROCEDURE pr_query_veterinarians (
-   p_cursor  OUT SYS_REFCURSOR);
-
--- Lista negra y reputación
-PROCEDURE pr_add_blacklist (
-   pnId_person  IN  NUMBER,
-   pcReason     IN  VARCHAR2,
-   pnResult     OUT NUMBER);
-
-PROCEDURE pr_report_blacklist (
-   pnOnly_adopters  IN  NUMBER,
-   p_cursor         OUT SYS_REFCURSOR);
-
-PROCEDURE pr_get_person_ratings (
-   pnId_person  IN  NUMBER,
-   p_cursor     OUT SYS_REFCURSOR);
-
--- Edición de los nombres de una persona (la ubicación se cambia con pr_update_person_location)
-PROCEDURE pr_update_person_names (
-   pnId_person        IN  NUMBER,
-   pcFirst_name       IN  VARCHAR2,
-   pcMiddle_name      IN  VARCHAR2,
-   pcFirst_lastName   IN  VARCHAR2,
-   pcSecond_lastName  IN  VARCHAR2,
-   pnResult           OUT NUMBER);
-
--- Edición de una casa cuna: ubicación, estado, capacidad, donación de alimento y lo que acepta.
--- pcPet_types y pcPet_sizes con el mismo formato de pr_register_foster_home ('1,2,3');
--- reemplazan por completo los tipos y tamaños aceptados.
-PROCEDURE pr_update_foster_home (
-   pnId_foster_home          IN  NUMBER,
-   pnId_district             IN  NUMBER,
-   pcAddress                 IN  VARCHAR2,
-   pnId_foster_home_status   IN  NUMBER,
-   pnMax_capacity            IN  NUMBER,
-   pnRequires_food_donation  IN  NUMBER,
-   pcPet_types               IN  VARCHAR2,
-   pcPet_sizes               IN  VARCHAR2,
-   pnResult                  OUT NUMBER);
-
--- Elimina un reporte de la lista negra (pnId_blacklist = blacklistId de pr_report_blacklist)
-PROCEDURE pr_delete_blacklist (
-   pnId_blacklist  IN  NUMBER,
-   pnResult        OUT NUMBER);
-
-END pkg_person_administration;
-/
-
-CREATE OR REPLACE PACKAGE BODY pkg_person_administration AS
-
--- Errores con nombre propio (para atraparlos en el EXCEPTION)
-eDatoNulo     EXCEPTION;
-PRAGMA EXCEPTION_INIT(eDatoNulo,     -1400);    -- NULL en columna NOT NULL (INSERT)
-eDatoNuloUpd  EXCEPTION;
-PRAGMA EXCEPTION_INIT(eDatoNuloUpd,  -1407);    -- NULL en columna NOT NULL (UPDATE)
-eDatoLargo    EXCEPTION;
-PRAGMA EXCEPTION_INIT(eDatoLargo,    -12899);   -- valor mas largo que la columna
-eNumeroGrande EXCEPTION;
-PRAGMA EXCEPTION_INIT(eNumeroGrande, -1438);    -- numero con mas digitos de los permitidos
-eCheckViolado EXCEPTION;
-PRAGMA EXCEPTION_INIT(eCheckViolado, -2290);    -- CHECK (ej. hasYard distinto de 0 o 1)
-eFkNoExiste   EXCEPTION;
-PRAGMA EXCEPTION_INIT(eFkNoExiste,   -2291);    -- FK: el registro padre no existe
-
--------------------------------------------------------------------------
--------------------- Ubicación y contactos de la persona ----------------
--------------------------------------------------------------------------
-
-PROCEDURE pr_insert_contacts (
-   pnId_person  IN  NUMBER,
-   pcEmail      IN  VARCHAR2,
-   pcPhone      IN  VARCHAR2)
-AS
+CREATE FUNCTION fn_email_exists (pcEmail VARCHAR(255))
+RETURNS INT DETERMINISTIC
 BEGIN
-   INSERT INTO contactEmail (id, idPerson, email)
-   VALUES (s_contactEmail.NEXTVAL, pnId_person, TRIM(pcEmail));
+    DECLARE vnTest INT DEFAULT 0;
+    SELECT 1 INTO vnTest FROM ContactEmail WHERE LOWER(email) = LOWER(TRIM(pcEmail)) LIMIT 1;
+    RETURN vnTest;
+END //
 
-   INSERT INTO contactNumber (id, idPerson, phoneNumber)
-   VALUES (s_contactNumber.NEXTVAL, pnId_person, TRIM(pcPhone));
-END pr_insert_contacts;
-
--------------------------------------------------------------------------
-------------------- Verificaciones de existencia ------------------------
--------------------------------------------------------------------------
-
-FUNCTION fn_person_exists (pnId_person IN NUMBER)
-RETURN NUMBER
-IS
-   vnTest NUMBER;
+CREATE FUNCTION fn_phone_exists (pcPhone VARCHAR(20))
+RETURNS INT DETERMINISTIC
 BEGIN
-   SELECT 1
-   INTO vnTest
-   FROM person
-   WHERE id = pnId_person;
+    DECLARE vnTest INT DEFAULT 0;
+    SELECT 1 INTO vnTest FROM ContactNumber WHERE phoneNumber = TRIM(pcPhone) LIMIT 1;
+    RETURN vnTest;
+END //
 
-   RETURN 1;
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN
-      RETURN 0;
-END fn_person_exists;
+DELIMITER ;
+-- -----------------------------------------------------------------------
+-- ------------------ Ubicación y contactos de la persona ----------------
+-- -----------------------------------------------------------------------
+DELIMITER //
 
-FUNCTION fn_email_exists (pcEmail IN VARCHAR2)
-RETURN NUMBER
-IS
-   vnTest NUMBER;
+CREATE PROCEDURE pr_insert_contacts (
+   IN pnId_person INT,
+   IN pcEmail VARCHAR(255),
+   IN pcPhone VARCHAR(20)
+)
 BEGIN
-   SELECT 1
-   INTO vnTest
-   FROM contactEmail
-   WHERE LOWER(email) = LOWER(TRIM(pcEmail));
+   INSERT INTO ContactEmail (idPerson, email)
+   VALUES (pnId_person, TRIM(pcEmail));
 
-   RETURN 1;
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN
-      RETURN 0;
-END fn_email_exists;
+   INSERT INTO ContactNumber (idPerson, phoneNumber)
+   VALUES (pnId_person, TRIM(pcPhone));
+END //
 
-FUNCTION fn_phone_exists (pcPhone IN VARCHAR2)
-RETURN NUMBER
-IS
-   vnTest NUMBER;
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- ------------------- Insertar y actualizar locación ------------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
+
+CREATE PROCEDURE pr_insert_location (
+    IN pnId_district INT,
+    IN pcAddress VARCHAR(255),
+    OUT pnId_location INT
+)
 BEGIN
-   SELECT 1
-   INTO vnTest
-   FROM contactNumber
-   WHERE phoneNumber = TRIM(pcPhone);
-
-   RETURN 1;
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN
-      RETURN 0;
-END fn_phone_exists;
-
------------------------------------------------------------------------------------
---------------------- Insertar y actualizar locación ------------------------------
------------------------------------------------------------------------------------
-
-PROCEDURE pr_insert_location (
-   pnId_district  IN  NUMBER,
-   pcAddress      IN  VARCHAR2,
-   pnId_location  OUT NUMBER)
-AS
+   INSERT INTO Location (idDistrict, address)
+   VALUES (pnId_district, TRIM(pcAddress));
+   SET pnId_location = LAST_INSERT_ID();
+END //
+DELIMITER //
+CREATE PROCEDURE pr_update_location (
+    IN pnId_location INT,
+    IN pnId_district INT,
+    IN pcAddress VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   INSERT INTO location (id, idDistrict, address)
-   VALUES (s_location.NEXTVAL, pnId_district, TRIM(pcAddress))
-   RETURNING id INTO pnId_location;
-END pr_insert_location;
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1011; END; -- eFkNoExiste
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-PROCEDURE pr_update_location (
-   pnId_location  IN  NUMBER,
-   pnId_district  IN  NUMBER,
-   pcAddress      IN  VARCHAR2,
-   pnResult       OUT NUMBER)
-AS
+    SET pnResult = 0;
+    START TRANSACTION;
+    UPDATE Location SET idDistrict = pnId_district, address = TRIM(pcAddress) WHERE id = pnId_location;
+    COMMIT;
+END //
+
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- ---------------------- Insertar y eliminar email --------------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
+
+CREATE PROCEDURE pr_add_email (
+    IN pnId_person INT,
+    IN pcEmail VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE EXIT HANDLER FOR 1062 BEGIN ROLLBACK; SET pnResult = 1004; END; -- DUP_VAL_ON_INDEX
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1010; END; -- eFkNoExiste
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   UPDATE location
-   SET idDistrict = pnId_district,
-       address    = TRIM(pcAddress)
-   WHERE id = pnId_location;
+    SET pnResult = 0;
+    START TRANSACTION;
+    INSERT INTO ContactEmail (idPerson, email)
+    VALUES (pnId_person, TRIM(pcEmail));
+    COMMIT;
+END //
 
-EXCEPTION
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_ubicacion_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_update_location;
-
------------------------------------------------------------------------------------
------------------------- Insertar y eliminar email --------------------------------
------------------------------------------------------------------------------------
-
-PROCEDURE pr_add_email (
-   pnId_person IN  NUMBER,
-   pcEmail     IN  VARCHAR2,
-   pnResult    OUT NUMBER)
-AS
+CREATE PROCEDURE pr_delete_email (
+    IN pnId_person INT,
+    IN pnId_email INT,
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE vnEmailCount INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   INSERT INTO contactEmail (id, idPerson, email)
-   VALUES (s_contactEmail.NEXTVAL, pnId_person, TRIM(pcEmail));
+    SET pnResult = 0;
 
-   COMMIT;
+    START TRANSACTION;
 
-EXCEPTION
-   WHEN DUP_VAL_ON_INDEX THEN
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_persona_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_add_email;
+    SELECT COUNT(1)
+    INTO vnEmailCount
+    FROM ContactEmail
+    WHERE idPerson = pnId_person;
 
-PROCEDURE pr_delete_email (
-   pnId_person IN  NUMBER,
-   pnId_email  IN  NUMBER,
-   pnResult    OUT NUMBER)
-AS
-   vnEmailCount NUMBER;
+    IF vnEmailCount <= 1 THEN
+        SET pnResult = 1012; -- c_ultimo_contacto
+        ROLLBACK;
+    ELSE
+        DELETE FROM ContactEmail
+        WHERE id = pnId_email
+        AND idPerson = pnId_person;
+
+        IF ROW_COUNT() = 0 THEN
+            SET pnResult = 1100; -- c_referencia_no_existe
+            ROLLBACK;
+        ELSE
+            COMMIT;
+        END IF;
+    END IF;
+END //
+
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- -------------------- Insertar y eliminar un teléfono ----------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
+
+CREATE PROCEDURE pr_add_phone (
+    IN pnId_person INT,
+    IN pcPhone VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE EXIT HANDLER FOR 1062 BEGIN ROLLBACK; SET pnResult = 1004; END; -- DUP_VAL_ON_INDEX
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1010; END; -- eFkNoExiste
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   SELECT COUNT(1)
-   INTO vnEmailCount
-   FROM contactEmail
-   WHERE idPerson = pnId_person;
+    SET pnResult = 0;
+    START TRANSACTION;
+    INSERT INTO ContactNumber (idPerson, phoneNumber)
+    VALUES (pnId_person, TRIM(pcPhone));
+    COMMIT;
+END //
 
-   IF vnEmailCount <= 1 THEN
-      pnResult := c_ultimo_contacto;
-      RETURN;
-   END IF;
-
-   DELETE FROM contactEmail
-   WHERE id = pnId_email
-   AND idPerson = pnId_person;
-
-   COMMIT;
-
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_delete_email;
-
------------------------------------------------------------------------------------
----------------------- Insertar y eliminar un teléfono ----------------------------
------------------------------------------------------------------------------------
-
-PROCEDURE pr_add_phone (
-   pnId_person IN  NUMBER,
-   pcPhone     IN  VARCHAR2,
-   pnResult    OUT NUMBER)
-AS
+CREATE PROCEDURE pr_delete_phone (
+    IN pnId_person INT,
+    IN pnId_phone INT,
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE vnPhoneCount INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   INSERT INTO contactNumber (id, idPerson, phoneNumber)
-   VALUES (s_contactNumber.NEXTVAL, pnId_person, TRIM(pcPhone));
+    SET pnResult = 0;
 
-   COMMIT;
+    START TRANSACTION;
 
-EXCEPTION
-   WHEN DUP_VAL_ON_INDEX THEN
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_persona_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_add_phone;
+    SELECT COUNT(1)
+    INTO vnPhoneCount
+    FROM ContactNumber
+    WHERE idPerson = pnId_person;
 
-PROCEDURE pr_delete_phone (
-   pnId_person IN  NUMBER,
-   pnId_phone  IN  NUMBER,
-   pnResult    OUT NUMBER)
-AS
-   vnPhoneCount NUMBER;
+    IF vnPhoneCount <= 1 THEN
+        SET pnResult = 1012; -- c_ultimo_contacto
+        ROLLBACK;
+    ELSE
+        DELETE FROM ContactNumber
+        WHERE id = pnId_phone
+          AND idPerson = pnId_person;
+
+        IF ROW_COUNT() = 0 THEN
+            SET pnResult = 1100; -- c_referencia_no_existe
+            ROLLBACK;
+        ELSE
+            COMMIT;
+        END IF;
+    END IF;
+END //
+
+CREATE PROCEDURE pr_get_person_contacts (IN pnId_person INT)
 BEGIN
-   pnResult := c_exito;
+    SELECT 'EMAIL' AS contactType, id AS contactId, email AS contactValue
+        FROM ContactEmail
+        WHERE idPerson = pnId_person
+    UNION ALL
+    SELECT 'PHONE' AS contactType, id AS contactId, phoneNumber AS contactValue
+        FROM ContactNumber WHERE idPerson = pnId_person
+    ORDER BY contactType, contactValue;
+END //
 
-   SELECT COUNT(1)
-   INTO vnPhoneCount
-   FROM contactNumber
-   WHERE idPerson = pnId_person;
-
-   IF vnPhoneCount <= 1 THEN
-      pnResult := c_ultimo_contacto;
-      RETURN;
-   END IF;
-
-   DELETE FROM contactNumber
-   WHERE id = pnId_phone
-   AND idPerson = pnId_person;
-
-   COMMIT;
-
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_delete_phone;
-
-PROCEDURE pr_get_person_contacts (
-   pnId_person  IN  NUMBER,
-   p_cursor     OUT SYS_REFCURSOR)
-AS
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- -------------------------------- Personas ---------------------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
+CREATE PROCEDURE pr_register_person (
+    IN pcFirst_name VARCHAR(30),
+    IN pcMiddle_name VARCHAR(30),
+    IN pcFirst_lastName VARCHAR(30),
+    IN pcSecond_lastName VARCHAR(30),
+    IN pnId_district INT,
+    IN pcAddress VARCHAR(255),
+    IN pcPhone VARCHAR(20),
+    IN pcEmail VARCHAR(255),
+    OUT pnId_person INT,
+    OUT pnResult INT
+)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT 'EMAIL' AS contactType,
-             id AS contactId,
-             email AS contactValue
-      FROM  contactEmail
-      WHERE idPerson = pnId_person
-      UNION ALL
-      SELECT 'PHONE' AS contactType,
-             id AS contactId,
-             phoneNumber AS contactValue
-      FROM contactNumber
-      WHERE idPerson = pnId_person
-      ORDER BY contactType, contactValue;
-END pr_get_person_contacts;
+    DECLARE vnId_location INT;
+    DECLARE EXIT HANDLER FOR 1062 BEGIN ROLLBACK; SET pnResult = 1004; END;
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1011; END;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
------------------------------------------------------------------------------------
----------------------------------- Personas ---------------------------------------
------------------------------------------------------------------------------------
+    SET pnResult = 0;
+    START TRANSACTION;
 
-PROCEDURE pr_register_person (
-   pcFirst_name       IN  VARCHAR2,
-   pcMiddle_name      IN  VARCHAR2,
-   pcFirst_lastName   IN  VARCHAR2,
-   pcSecond_lastName  IN  VARCHAR2,
-   pnId_district      IN  NUMBER,
-   pcAddress          IN  VARCHAR2,
-   pcPhone            IN  VARCHAR2,
-   pcEmail            IN  VARCHAR2,
-   pnId_person        OUT NUMBER,
-   pnResult           OUT NUMBER)
-AS
-   vnId_location      NUMBER;
-   vnId_person        NUMBER;
+    CALL pr_insert_location(pnId_district, pcAddress, vnId_location);
+
+    INSERT INTO Person (idLocation, firstName, middleName, firstLastName, secondLastName)
+    VALUES (vnId_location, TRIM(pcFirst_name), TRIM(pcMiddle_name), TRIM(pcFirst_lastName), TRIM(pcSecond_lastName));
+
+    SET pnId_person = LAST_INSERT_ID();
+    CALL pr_insert_contacts(pnId_person, pcEmail, pcPhone);
+
+    COMMIT;
+END //
+
+CREATE PROCEDURE pr_update_person_location (
+    IN pnId_person INT,
+    IN pnId_district INT,
+    IN pcAddress VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE vnId_location INT;
+    DECLARE vnUpdate_result  INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   pr_insert_location(pnId_district, pcAddress, vnId_location);
+    SET pnResult = 0;
+    START TRANSACTION;
 
-   INSERT INTO person (id, idLocation, firstName, middleName, firstLastName, secondLastName)
-   VALUES (s_person.NEXTVAL, vnId_location, TRIM(pcFirst_name), TRIM(pcMiddle_name), TRIM(pcFirst_lastName), TRIM(pcSecond_lastName))
-   RETURNING id INTO vnId_person;
+    SELECT idLocation
+    INTO vnId_location
+    FROM Person
+    WHERE id = pnId_person
+    LIMIT 1;
 
-   pr_insert_contacts(vnId_person, pcEmail, pcPhone);
+    IF vnId_location IS NULL THEN
+        ROLLBACK;
+        SET pnResult = 1010; -- c_persona_no_existe
+    ELSE
+        CALL pr_update_location(vnId_location, pnId_district, pcAddress, vnUpdate_result);
 
-   pnId_person := vnId_person;
+        IF vnUpdate_result <> 0 THEN
+            SET pnResult = vnUpdate_result;
+            ROLLBACK;
+        ELSE
+           COMMIT;
+        END IF;
+    END IF;
+END //
 
-EXCEPTION
-   WHEN DUP_VAL_ON_INDEX THEN
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_ubicacion_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_register_person;
-
-PROCEDURE pr_update_person_location (
-   pnId_person   IN  NUMBER,
-   pnId_district IN  NUMBER,
-   pcAddress     IN  VARCHAR2,
-   pnResult      OUT NUMBER)
-AS
-   vnId_location   NUMBER;
-   vnUpdate_result  NUMBER;
+CREATE PROCEDURE pr_get_persons (
+    IN pnId_person INT,
+    IN pnId_province INT,
+    IN pnId_canton INT,
+    IN pnId_district INT
+)
 BEGIN
-   pnResult := c_exito;
+    SELECT p.id,
+        p.firstName      AS firstName,
+        p.middleName     AS middleName,
+        p.firstLastName  AS firstLastName,
+        p.secondLastName AS secondLastName,
+        lo.id   AS locationId,
+        lo.address,
+        di.id   AS districtId,
+        di.name AS districtName,
+        ca.id   AS cantonId,
+        ca.name AS cantonName,
+        pv.id   AS provinceId,
+        pv.name AS provinceName
+    FROM Person p
+    INNER JOIN Location lo ON lo.id = p.idLocation
+    INNER JOIN District di ON di.id = lo.idDistrict
+    INNER JOIN Canton ca ON ca.id = di.idCanton
+    INNER JOIN Province pv ON pv.id = ca.idProvince
+    WHERE (pnId_person IS NULL OR p.id = pnId_person)
+      AND (pnId_province IS NULL OR pv.id = pnId_province)
+      AND (pnId_canton IS NULL OR ca.id = pnId_canton)
+      AND (pnId_district IS NULL OR di.id = pnId_district)
+    ORDER BY p.firstLastName, p.firstName;
+END //
 
-   SELECT idLocation
-   INTO vnId_location
-   FROM person
-   WHERE id = pnId_person;
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- ------------------------- Adoptantes (hijo de Person) ---------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
 
-   pr_update_location(vnId_location, pnId_district, pcAddress, vnUpdate_result);
-
-   IF vnUpdate_result <> c_exito THEN
-      pnResult := vnUpdate_result;
-      RETURN;
-   END IF;
-
-   COMMIT;
-
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN
-      ROLLBACK;
-      pnResult := c_persona_no_existe;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_update_person_location;
-
-PROCEDURE pr_get_persons (
-   pnId_person    IN  NUMBER,
-   pnId_province  IN  NUMBER,
-   pnId_canton    IN  NUMBER,
-   pnId_district  IN  NUMBER,
-   p_cursor       OUT SYS_REFCURSOR)
-AS
+CREATE PROCEDURE pr_register_adopter (
+    IN pnId_person INT,
+    IN pnId_house_type INT,
+    IN pnHas_yard TINYINT,
+    IN pnId_exercise_time INT,
+    IN pcOther_pet_breeds VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT p.id,
-             p.firstName      AS firstName,
-             p.middleName     AS middleName,
-             p.firstLastName  AS firstLastName,
-             p.secondLastName AS secondLastName,
-             lo.id   AS locationId,
-             lo.address,
-             di.id   AS districtId,
-             di.name AS districtName,
-             ca.id   AS cantonId,
-             ca.name AS cantonName,
-             pv.id   AS provinceId,
-             pv.name AS provinceName
-      FROM person p
-      INNER JOIN location lo ON lo.id = p.idLocation
-      INNER JOIN district di ON di.id = lo.idDistrict
-      INNER JOIN canton ca ON ca.id = di.idCanton
-      INNER JOIN province pv ON pv.id = ca.idProvince
-      WHERE p.id  = NVL(pnId_person, p.id)
-        AND pv.id = NVL(pnId_province, pv.id)
-        AND ca.id = NVL(pnId_canton, ca.id)
-        AND di.id = NVL(pnId_district, di.id)
-      ORDER BY p.firstLastName, p.firstName;
-END pr_get_persons;
+    DECLARE vnId_house INT;
+    DECLARE v_count INT DEFAULT 1;
+    DECLARE v_total INT;
+    DECLARE v_val VARCHAR(10);
 
------------------------------------------------------------------------------------
---------------------------- Adoptantes (hijo de Person) ---------------------------
------------------------------------------------------------------------------------
+    DECLARE EXIT HANDLER FOR 1062 BEGIN ROLLBACK; SET pnResult = 1004; END;
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1100; END;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-PROCEDURE pr_register_adopter (
-   pnId_person         IN  NUMBER,
-   pnId_house_type     IN  NUMBER,
-   pnHas_yard          IN  NUMBER,
-   pnId_exercise_time  IN  NUMBER,
-   pcOther_pet_breeds  IN  VARCHAR2,
-   pnResult            OUT NUMBER)
-AS
-   vnId_house  NUMBER;
-   vnCount     NUMBER;
+    SET pnResult = 0;
+    START TRANSACTION;
+
+    INSERT INTO House (idHouseType, hasYard) VALUES (pnId_house_type, pnHas_yard);
+    SET vnId_house = LAST_INSERT_ID();
+
+    INSERT INTO Adopter (idAdopter, idHouse, idExerciseTime) VALUES (pnId_person, vnId_house, pnId_exercise_time);
+
+    -- MySQL String Split (Sustituye a REGEXP_COUNT / REGEXP_SUBSTR)
+    IF pcOther_pet_breeds IS NOT NULL AND pcOther_pet_breeds != '' THEN
+        SET v_total = CHAR_LENGTH(pcOther_pet_breeds) - CHAR_LENGTH(REPLACE(pcOther_pet_breeds, ',', '')) + 1;
+        WHILE v_count <= v_total DO
+            SET v_val = TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(pcOther_pet_breeds, ',', v_count), ',', -1));
+            INSERT INTO OtherPet (idPetBreed, idAdopter) VALUES (CAST(v_val AS UNSIGNED), pnId_person);
+            SET v_count = v_count + 1;
+        END WHILE;
+    END IF;
+
+    COMMIT;
+END //
+
+CREATE PROCEDURE pr_get_adopter (IN pnId_adopter INT)
 BEGIN
-   pnResult := c_exito;
+    SELECT ad.idAdopter,
+           ho.idHouseType,
+           ht.name AS houseTypeName,
+           ho.hasYard,
+           ad.idExerciseTime,
+           ex.value AS exerciseTimeValue
+    FROM Adopter ad
+             INNER JOIN House ho ON ho.id = ad.idHouse
+             INNER JOIN HouseType ht ON ht.id = ho.idHouseType
+             INNER JOIN ExerciseTime ex ON ex.id = ad.idExerciseTime
+    WHERE ad.idAdopter = pnId_adopter;
+END //
 
-   INSERT INTO house (id, idHouseType, hasYard)
-   VALUES (s_house.NEXTVAL, pnId_house_type, pnHas_yard)
-   RETURNING id INTO vnId_house;
-
-   INSERT INTO adopter (idAdopter, idHouse, idExerciseTime)
-   VALUES (pnId_person, vnId_house, pnId_exercise_time);
-
-   IF pcOther_pet_breeds IS NOT NULL THEN
-      vnCount := REGEXP_COUNT(pcOther_pet_breeds, '[^,]+');
-      FOR i IN 1 .. vnCount LOOP
-         INSERT INTO otherPet (id, idPetBreed, idAdopter)
-         VALUES (s_otherPet.NEXTVAL, TO_NUMBER(TRIM(REGEXP_SUBSTR(pcOther_pet_breeds, '[^,]+', 1, i))), pnId_person);
-      END LOOP;
-   END IF;
-
-   COMMIT;
-
-EXCEPTION
-   WHEN DUP_VAL_ON_INDEX THEN
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_register_adopter;
-
-PROCEDURE pr_get_adopter (
-   pnId_adopter  IN  NUMBER,
-   p_cursor      OUT SYS_REFCURSOR)
-AS
+CREATE PROCEDURE pr_get_other_pets (IN pnId_adopter INT)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT ad.idAdopter,
-             ho.idHouseType,
-             ht.name AS houseTypeName,
-             ho.hasYard,
-             ad.idExerciseTime,
-             ex.value AS exerciseTimeValue
-      FROM adopter ad
-      INNER JOIN house ho ON ho.id = ad.idHouse
-      INNER JOIN houseType ht ON ht.id = ho.idHouseType
-      INNER JOIN exerciseTime ex ON ex.id = ad.idExerciseTime
-      WHERE ad.idAdopter = pnId_adopter;
-END pr_get_adopter;
+    SELECT op.id,
+           pt.name AS typeName,
+           pb.name AS breedName
+    FROM OtherPet op
+             INNER JOIN PetBreed pb ON pb.id = op.idPetBreed
+             INNER JOIN PetType pt ON pt.id = pb.idPetType
+    WHERE op.idAdopter = pnId_adopter
+    ORDER BY pt.name, pb.name;
+END //
 
-PROCEDURE pr_get_other_pets (
-   pnId_adopter  IN  NUMBER,
-   p_cursor      OUT SYS_REFCURSOR)
-AS
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- ----------------------- Casas cuna (hijo de Person) -----------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
+
+CREATE PROCEDURE pr_register_foster_home (
+    IN pnId_person INT,
+    IN pnId_district INT,
+    IN pcAddress VARCHAR(255),
+    IN pnId_foster_home_status INT,
+    IN pnMax_capacity INT,
+    IN pnRequires_food_donation TINYINT,
+    IN pcPet_types VARCHAR(255),
+    IN pcPet_sizes VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT op.id,
-             pt.name AS typeName,
-             pb.name AS breedName
-      FROM otherPet op
-      INNER JOIN petBreed pb ON pb.id = op.idPetBreed
-      INNER JOIN petType pt ON pt.id = pb.idPetType
-      WHERE op.idAdopter = pnId_adopter
-      ORDER BY pt.name, pb.name;
-END pr_get_other_pets;
+    DECLARE vnId_location INT;
+    DECLARE v_count INT DEFAULT 1;
+    DECLARE v_total INT;
+    DECLARE v_val VARCHAR(10);
 
------------------------------------------------------------------------------------
-------------------------- Casas cuna (hijo de Person) -----------------------------
------------------------------------------------------------------------------------
+    DECLARE EXIT HANDLER FOR 1062 BEGIN ROLLBACK; SET pnResult = 1004; END;
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1100; END;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-PROCEDURE pr_register_foster_home (
-   pnId_person               IN  NUMBER,
-   pnId_district             IN  NUMBER,
-   pcAddress                 IN  VARCHAR2,
-   pnId_foster_home_status   IN  NUMBER,
-   pnMax_capacity            IN  NUMBER,
-   pnRequires_food_donation  IN  NUMBER,
-   pcPet_types               IN  VARCHAR2,
-   pcPet_sizes               IN  VARCHAR2,
-   pnResult                  OUT NUMBER)
-AS
-   vnId_location NUMBER;
-   vnCount       NUMBER;
+    SET pnResult = 0;
+    START TRANSACTION;
+
+    CALL pr_insert_location(pnId_district, pcAddress, vnId_location);
+
+    INSERT INTO FosterHome (idFosterHome, idLocation, idFosterHomeStatus, maxCapacity, requiresFoodDonation, petCount)
+    VALUES (pnId_person, vnId_location, pnId_foster_home_status, pnMax_capacity, pnRequires_food_donation, 0);
+
+    IF pcPet_types IS NOT NULL AND pcPet_types != '' THEN
+        SET v_total = CHAR_LENGTH(pcPet_types) - CHAR_LENGTH(REPLACE(pcPet_types, ',', '')) + 1;
+        WHILE v_count <= v_total DO
+                SET v_val = TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(pcPet_types, ',', v_count), ',', -1));
+                INSERT INTO FosterHome_x_petType (idFosterHome, idPetType) VALUES (pnId_person, CAST(v_val AS UNSIGNED));
+                SET v_count = v_count + 1;
+            END WHILE;
+    END IF;
+
+    IF pcPet_sizes IS NOT NULL AND pcPet_sizes != '' THEN
+        SET v_count = 1;
+        SET v_total = CHAR_LENGTH(pcPet_sizes) - CHAR_LENGTH(REPLACE(pcPet_sizes, ',', '')) + 1;
+        WHILE v_count <= v_total DO
+                SET v_val = TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(pcPet_sizes, ',', v_count), ',', -1));
+                INSERT INTO FosterHome_x_petSize (idFosterHome, idPetSize) VALUES (pnId_person, CAST(v_val AS UNSIGNED));
+                SET v_count = v_count + 1;
+            END WHILE;
+    END IF;
+
+    COMMIT;
+END //
+
+CREATE PROCEDURE pr_get_foster_homes (
+    IN pnId_foster_home INT,
+    IN pnId_province INT,
+    IN pnId_canton INT,
+    IN pnId_district INT,
+    IN pnId_pet_type INT,
+    IN pnId_pet_size INT,
+    IN pnOnly_available TINYINT
+)
 BEGIN
-   pnResult := c_exito;
+    SELECT DISTINCT
+        fh.idFosterHome AS id,
+        TRIM(CONCAT(pe.firstName, ' ', pe.firstLastName, ' ', COALESCE(pe.secondLastName, ''))) AS ownerName,
+        pv.id   AS provinceId,
+        pv.name AS provinceName,
+        ca.id   AS cantonId,
+        ca.name AS cantonName,
+        di.id   AS districtId,
+        di.name AS districtName,
+        lo.address,
+        fh.idFosterHomeStatus,
+        fs.name AS statusName,
+        fh.maxCapacity,
+        (SELECT COUNT(1) FROM Pet pt WHERE pt.idFosterHome = fh.idFosterHome) AS currentPets,
+        fh.maxCapacity - (SELECT COUNT(1) FROM Pet pt WHERE pt.idFosterHome = fh.idFosterHome) AS availableSpots,
+        fh.requiresFoodDonation
+    FROM FosterHome fh
+             INNER JOIN Person pe ON pe.id = fh.idFosterHome
+             INNER JOIN Location lo ON lo.id = fh.idLocation
+             INNER JOIN District di ON di.id = lo.idDistrict
+             INNER JOIN Canton ca ON ca.id = di.idCanton
+             INNER JOIN Province pv ON pv.id = ca.idProvince
+             INNER JOIN FosterHomeStatus fs ON fs.id = fh.idFosterHomeStatus
+             LEFT JOIN FosterHome_x_petType ft ON ft.idFosterHome = fh.idFosterHome
+             LEFT JOIN FosterHome_x_petSize fz ON fz.idFosterHome = fh.idFosterHome
+    WHERE (pnId_foster_home IS NULL OR fh.idFosterHome = pnId_foster_home)
+      AND (pnId_province IS NULL OR pv.id = pnId_province)
+      AND (pnId_canton IS NULL OR ca.id = pnId_canton)
+      AND (pnId_district IS NULL OR di.id = pnId_district)
+      AND (pnId_pet_type IS NULL OR ft.idPetType = pnId_pet_type)
+      AND (pnId_pet_size IS NULL OR fz.idPetSize = pnId_pet_size)
+      AND (COALESCE(pnOnly_available, 0) = 0 OR fh.maxCapacity > (SELECT COUNT(1) FROM Pet pt WHERE pt.idFosterHome = fh.idFosterHome))
+    ORDER BY pv.name, ca.name, di.name, fh.idFosterHome;
+END //
 
-   pr_insert_location(pnId_district, pcAddress, vnId_location);
-
-   INSERT INTO fosterHome (idFosterHome, idLocation, idFosterHomeStatus, maxCapacity, requiresFoodDonation, petCount)
-   VALUES (pnId_person, vnId_location, pnId_foster_home_status, pnMax_capacity, pnRequires_food_donation, 0);
-
-   IF pcPet_types IS NOT NULL THEN
-      vnCount := REGEXP_COUNT(pcPet_types, '[^,]+');
-      FOR i IN 1 .. vnCount LOOP
-         INSERT INTO fosterHome_x_petType (idFosterHome, idPetType)
-         VALUES (pnId_person, TO_NUMBER(TRIM(REGEXP_SUBSTR(pcPet_types, '[^,]+', 1, i))));
-      END LOOP;
-   END IF;
-
-   IF pcPet_sizes IS NOT NULL THEN
-      vnCount := REGEXP_COUNT(pcPet_sizes, '[^,]+');
-      FOR i IN 1 .. vnCount LOOP
-         INSERT INTO fosterHome_x_petSize (idFosterHome, idPetSize)
-         VALUES (pnId_person, TO_NUMBER(TRIM(REGEXP_SUBSTR(pcPet_sizes, '[^,]+', 1, i))));
-      END LOOP;
-   END IF;
-
-   COMMIT;
-
-EXCEPTION
-   WHEN DUP_VAL_ON_INDEX THEN
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_register_foster_home;
-
-PROCEDURE pr_get_foster_homes (
-   pnId_foster_home IN  NUMBER,
-   pnId_province    IN  NUMBER,
-   pnId_canton      IN  NUMBER,
-   pnId_district    IN  NUMBER,
-   pnId_pet_type    IN  NUMBER,
-   pnId_pet_size    IN  NUMBER,
-   pnOnly_available IN  NUMBER,
-   p_cursor         OUT SYS_REFCURSOR)
-AS
+CREATE PROCEDURE pr_get_foster_home_accepts (IN pnId_foster_home INT)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT DISTINCT
-         fh.idFosterHome AS id,
-         TRIM(pe.firstName || ' ' || pe.firstLastName || ' ' || pe.secondLastName) AS ownerName,
-         pv.id   AS provinceId,
-         pv.name AS provinceName,
-         ca.id   AS cantonId,
-         ca.name AS cantonName,
-         di.id   AS districtId,
-         di.name AS districtName,
-         lo.address,
-         fh.idFosterHomeStatus,
-         fs.name AS statusName,
-         fh.maxCapacity, (SELECT COUNT(1)
-                          FROM pet pt
-                          WHERE pt.idFosterHome = fh.idFosterHome) AS currentPets,
-         fh.maxCapacity - (SELECT COUNT(1)
-                           FROM pet pt
-                           WHERE pt.idFosterHome = fh.idFosterHome) AS availableSpots,
-         fh.requiresFoodDonation
-      FROM fosterHome fh
-      INNER JOIN person pe ON pe.id = fh.idFosterHome
-      INNER JOIN location lo ON lo.id = fh.idLocation
-      INNER JOIN district di ON di.id = lo.idDistrict
-      INNER JOIN canton ca ON ca.id = di.idCanton
-      INNER JOIN province pv ON pv.id = ca.idProvince
-      INNER JOIN fosterHomeStatus fs ON fs.id = fh.idFosterHomeStatus
-      LEFT JOIN fosterHome_x_petType ft ON ft.idFosterHome = fh.idFosterHome
-      LEFT JOIN fosterHome_x_petSize fz ON fz.idFosterHome = fh.idFosterHome
-      WHERE fh.idFosterHome = NVL(pnId_foster_home, fh.idFosterHome)
-        AND pv.id           = NVL(pnId_province, pv.id)
-        AND ca.id           = NVL(pnId_canton, ca.id)
-        AND di.id           = NVL(pnId_district, di.id)
-        AND NVL(ft.idPetType, -1) = NVL(pnId_pet_type, NVL(ft.idPetType, -1))
-        AND NVL(fz.idPetSize, -1) = NVL(pnId_pet_size, NVL(fz.idPetSize, -1))
-        AND (NVL(pnOnly_available, 0) = 0 OR fh.maxCapacity > (SELECT COUNT(1)
-                                                               FROM pet pt
-                                                               WHERE pt.idFosterHome = fh.idFosterHome))
-      ORDER BY pv.name, ca.name, di.name, fh.idFosterHome;
-END pr_get_foster_homes;
+    SELECT 'TYPE' AS acceptType, pt.id AS acceptId, pt.name AS acceptName
+    FROM FosterHome_x_petType ft
+             JOIN PetType pt ON pt.id = ft.idPetType
+    WHERE ft.idFosterHome = pnId_foster_home
+    UNION ALL
+    SELECT 'SIZE' AS acceptType, sz.id AS acceptId, sz.name AS acceptName
+    FROM FosterHome_x_petSize fz
+             JOIN PetSize sz ON sz.id = fz.idPetSize
+    WHERE fz.idFosterHome = pnId_foster_home
+    ORDER BY acceptType, acceptName;
+END //
 
-PROCEDURE pr_get_foster_home_accepts (
-   pnId_foster_home  IN  NUMBER,
-   p_cursor          OUT SYS_REFCURSOR)
-AS
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- --------------------------------- Veterinarios ----------------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
+CREATE PROCEDURE pr_register_veterinarian (
+    IN pnId_person INT,
+    OUT pnId_veterinarian INT,
+    OUT pnResult INT
+)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT 'TYPE'     AS acceptType,
-             pt.id      AS acceptId,
-             pt.name    AS acceptName
-      FROM fosterHome_x_petType ft
-      JOIN petType pt ON pt.id = ft.idPetType
-      WHERE ft.idFosterHome = pnId_foster_home
-      UNION ALL
-      SELECT 'SIZE'     AS acceptType,
-             sz.id      AS acceptId,
-             sz.name    AS acceptName
-      FROM fosterHome_x_petSize fz
-      JOIN petSize sz ON sz.id = fz.idPetSize
-      WHERE fz.idFosterHome = pnId_foster_home
-      ORDER BY acceptType, acceptName;
-END pr_get_foster_home_accepts;
+    DECLARE EXIT HANDLER FOR 1062 BEGIN ROLLBACK; SET pnResult = 1004; END;
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1010; END;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
------------------------------------------------------------------------------------
------------------------------------ Veterinarios ----------------------------------
------------------------------------------------------------------------------------
+    SET pnResult = 0;
+    START TRANSACTION;
 
-PROCEDURE pr_register_veterinarian (
-   pnId_person        IN  NUMBER,
-   pnId_veterinarian  OUT NUMBER,
-   pnResult           OUT NUMBER)
-AS
-   vnId_veterinarian  NUMBER;
+    INSERT INTO Veterinarian (idPerson) VALUES (pnId_person);
+    SET pnId_veterinarian = LAST_INSERT_ID();
+
+    COMMIT;
+END //
+
+CREATE PROCEDURE pr_query_veterinarians ()
 BEGIN
-   pnResult := c_exito;
+    SELECT v.id,
+           p.id AS personId,
+           TRIM(CONCAT(p.firstName, ' ', p.firstLastName, ' ', COALESCE(p.secondLastName, ''))) AS fullName
+    FROM Veterinarian v
+             JOIN Person p ON p.id = v.idPerson
+    ORDER BY p.firstLastName, p.firstName, v.id;
+END //
 
-   INSERT INTO veterinarian (id, idPerson)
-   VALUES (s_veterinarian.NEXTVAL, pnId_person)
-   RETURNING id INTO vnId_veterinarian;
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- ---------------------------- Lista negra y reputacion ---------------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
 
-   COMMIT;
-   pnId_veterinarian := vnId_veterinarian;
-
-EXCEPTION
-   WHEN DUP_VAL_ON_INDEX THEN
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_persona_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_register_veterinarian;
-
-PROCEDURE pr_query_veterinarians (
-   p_cursor  OUT SYS_REFCURSOR)
-AS
+CREATE PROCEDURE pr_add_blacklist (
+    IN pnId_person INT,
+    IN pcReason VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT v.id,
-             p.id AS personId,
-             TRIM(p.firstName || ' ' || p.firstLastName || ' ' || p.secondLastName) AS fullName
-      FROM veterinarian v
-      JOIN person p ON p.id = v.idPerson
-      ORDER BY p.firstLastName, p.firstName, v.id;
-END pr_query_veterinarians;
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1010; END;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
------------------------------------------------------------------------------------
------------------------------- Lista negra y reputacion ---------------------------
------------------------------------------------------------------------------------
+    SET pnResult = 0;
+    START TRANSACTION;
 
-PROCEDURE pr_add_blacklist (
-   pnId_person  IN  NUMBER,
-   pcReason     IN  VARCHAR2,
-   pnResult     OUT NUMBER)
-AS
+    INSERT INTO BlackList (idPerson, blackListReason) VALUES (pnId_person, TRIM(pcReason));
+
+    COMMIT;
+END //
+
+CREATE PROCEDURE pr_report_blacklist (IN pnOnly_adopters TINYINT)
 BEGIN
-   pnResult := c_exito;
+    SELECT bl.id AS blacklistId,
+           p.id  AS personId,
+           TRIM(CONCAT(p.firstName, ' ', p.firstLastName, ' ', COALESCE(p.secondLastName, ''))) AS fullName,
+           bl.blackListDate,
+           bl.blackListReason,
+           CASE WHEN ad.idAdopter IS NOT NULL THEN 1 ELSE 0 END AS isAdopter
+    FROM BlackList bl
+             INNER JOIN Person p ON p.id = bl.idPerson
+             LEFT JOIN Adopter ad ON ad.idAdopter = p.id
+    WHERE (COALESCE(pnOnly_adopters, 0) = 0 OR ad.idAdopter IS NOT NULL)
+    ORDER BY bl.blackListDate DESC, p.id;
+END //
 
-   INSERT INTO blackList (id, idPerson, blackListReason)
-   VALUES (s_blackList.NEXTVAL, pnId_person, TRIM(pcReason));
-
-   COMMIT;
-
-EXCEPTION
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_persona_no_existe;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_add_blacklist;
-
-PROCEDURE pr_report_blacklist (
-   pnOnly_adopters IN  NUMBER,
-   p_cursor        OUT SYS_REFCURSOR)
-AS
+CREATE PROCEDURE pr_get_person_ratings (IN pnId_person INT)
 BEGIN
-   OPEN p_cursor FOR
-      SELECT bl.id AS blacklistId,
-         p.id  AS personId,
-         TRIM(p.firstName || ' ' || p.firstLastName || ' ' || p.secondLastName) AS fullName,
-         bl.blackListDate,
-         bl.blackListReason,
-         CASE
-            WHEN ad.idAdopter IS NOT NULL THEN 1
-            ELSE 0
-         END AS isAdopter
-      FROM blackList bl
-      INNER JOIN person p ON p.id = bl.idPerson
-      LEFT JOIN adopter ad ON ad.idAdopter = p.id
-      WHERE (NVL(pnOnly_adopters, 0) = 0 OR ad.idAdopter IS NOT NULL)
-      ORDER BY bl.blackListDate DESC, p.id;
-END pr_report_blacklist;
-
-PROCEDURE pr_get_person_ratings (
-   pnId_person IN  NUMBER,
-   p_cursor    OUT SYS_REFCURSOR)
-AS
-BEGIN
-   OPEN p_cursor FOR
-      SELECT p.id AS personId,
-             TRIM(p.firstName || ' ' || p.firstLastName || ' ' || p.secondLastName) AS fullName,
-             r.id AS ratingId,
-             r.rating,
-             r.notes,
-             a.adoptionDate,
-             pt.name AS petName,
-             TRIM(g.firstName || ' ' || g.firstLastName || ' ' || g.secondLastName) AS givenByName,
-             CASE
-                WHEN bl.idPerson IS NOT NULL THEN 1
-                ELSE 0 END AS isBlacklisted,
-             bl.blackListReason,
-             bl.blackListDate
-      FROM person p
-      LEFT JOIN adoption a ON a.idAdopter = p.id
-      LEFT JOIN petOwnerRating r ON r.idAdoption = a.id
-      LEFT JOIN pet pt ON pt.id = a.idPet
-      LEFT JOIN person g ON g.id = a.idPerson
-      LEFT JOIN blackList bl ON bl.idPerson = p.id
-      WHERE p.id = pnId_person
-      ORDER BY a.adoptionDate DESC, r.id DESC;
-END pr_get_person_ratings;
-
------------------------------------------------------------------------------------
---------------------------- Ediciones (personas y casas cuna) ---------------------
------------------------------------------------------------------------------------
-
+    SELECT p.id AS personId,
+           TRIM(CONCAT(p.firstName, ' ', p.firstLastName, ' ', COALESCE(p.secondLastName, ''))) AS fullName,
+           r.id AS ratingId,
+           r.rating,
+           r.notes,
+           a.adoptionDate,
+           pt.name AS petName,
+           TRIM(CONCAT(g.firstName, ' ', g.firstLastName, ' ', COALESCE(g.secondLastName, ''))) AS givenByName,
+           CASE WHEN bl.idPerson IS NOT NULL THEN 1 ELSE 0 END AS isBlacklisted,
+           bl.blackListReason,
+           bl.blackListDate
+    FROM Person p
+             LEFT JOIN Adoption a ON a.idAdopter = p.id
+             LEFT JOIN PetOwnerRating r ON r.idAdoption = a.id
+             LEFT JOIN Pet pt ON pt.id = a.idPet
+             LEFT JOIN Person g ON g.id = a.idPerson
+             LEFT JOIN BlackList bl ON bl.idPerson = p.id
+    WHERE p.id = pnId_person
+    ORDER BY a.adoptionDate DESC, r.id DESC;
+END //
+DELIMITER ;
+-- ---------------------------------------------------------------------------------
+-- ------------------------- Ediciones (personas y casas cuna) ---------------------
+-- ---------------------------------------------------------------------------------
+DELIMITER //
 -- Procedimiento que actualiza los nombres de una persona
-PROCEDURE pr_update_person_names (
-   pnId_person        IN  NUMBER,
-   pcFirst_name       IN  VARCHAR2,
-   pcMiddle_name      IN  VARCHAR2,
-   pcFirst_lastName   IN  VARCHAR2,
-   pcSecond_lastName  IN  VARCHAR2,
-   pnResult           OUT NUMBER)
-AS
+CREATE PROCEDURE pr_update_person_names (
+    IN pnId_person INT,
+    IN pcFirst_name VARCHAR(30),
+    IN pcMiddle_name VARCHAR(30),
+    IN pcFirst_lastName VARCHAR(30),
+    IN pcSecond_lastName VARCHAR(30),
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   UPDATE person
-   SET firstName      = TRIM(pcFirst_name),
-       middleName     = TRIM(pcMiddle_name),
-       firstLastName  = TRIM(pcFirst_lastName),
-       secondLastName = TRIM(pcSecond_lastName)
-   WHERE id = pnId_person;
+    SET pnResult = 0;
+    START TRANSACTION;
 
-   IF SQL%ROWCOUNT = 0 THEN                         -- La persona no existe
-      ROLLBACK;
-      pnResult := c_persona_no_existe;
-      RETURN;
-   END IF;
+    UPDATE Person
+    SET firstName      = TRIM(pcFirst_name),
+        middleName     = TRIM(pcMiddle_name),
+        firstLastName  = TRIM(pcFirst_lastName),
+        secondLastName = TRIM(pcSecond_lastName)
+    WHERE id = pnId_person;
 
-   COMMIT;
+    IF ROW_COUNT() = 0 THEN
+        ROLLBACK;
+        SET pnResult = 1010; -- c_persona_no_existe
+    ELSE
+        COMMIT;
+    END IF;
+END //
 
-EXCEPTION
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_update_person_names;
-
--- Procedimiento que actualiza una casa cuna y reemplaza los tipos y tamaños que acepta
-PROCEDURE pr_update_foster_home (
-   pnId_foster_home          IN  NUMBER,
-   pnId_district             IN  NUMBER,
-   pcAddress                 IN  VARCHAR2,
-   pnId_foster_home_status   IN  NUMBER,
-   pnMax_capacity            IN  NUMBER,
-   pnRequires_food_donation  IN  NUMBER,
-   pcPet_types               IN  VARCHAR2,
-   pcPet_sizes               IN  VARCHAR2,
-   pnResult                  OUT NUMBER)
-AS
-   vnId_location    NUMBER;
-   vnPets           NUMBER;
-   vnCount          NUMBER;
-   vnUpdate_result  NUMBER;
+CREATE PROCEDURE pr_update_foster_home (
+    IN pnId_foster_home INT,
+    IN pnId_district INT,
+    IN pcAddress VARCHAR(255),
+    IN pnId_foster_home_status INT,
+    IN pnMax_capacity INT,
+    IN pnRequires_food_donation TINYINT,
+    IN pcPet_types VARCHAR(255),
+    IN pcPet_sizes VARCHAR(255),
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE vnId_location INT DEFAULT NULL;
+    DECLARE vnPets INT;
+    DECLARE vnUpdate_result INT;
+    DECLARE v_count INT DEFAULT 1;
+    DECLARE v_total INT;
+    DECLARE v_val VARCHAR(10);
 
-   SELECT idLocation
-   INTO vnId_location
-   FROM fosterHome
-   WHERE idFosterHome = pnId_foster_home;
+    DECLARE EXIT HANDLER FOR 1062 BEGIN ROLLBACK; SET pnResult = 1004; END;
+    DECLARE EXIT HANDLER FOR 1452 BEGIN ROLLBACK; SET pnResult = 1100; END;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   -- La capacidad no puede quedar por debajo de las mascotas que ya tiene
-   SELECT COUNT(1)
-   INTO vnPets
-   FROM pet
-   WHERE idFosterHome = pnId_foster_home;
+    SET pnResult = 0;
+    START TRANSACTION;
 
-   IF pnMax_capacity IS NULL OR pnMax_capacity < vnPets THEN
-      pnResult := c_dato_invalido;
-      RETURN;
-   END IF;
+    SELECT idLocation INTO vnId_location FROM FosterHome WHERE idFosterHome = pnId_foster_home LIMIT 1;
+    IF vnId_location IS NULL THEN
+        SET pnResult = 1100;
+        ROLLBACK;
+    ELSE
+        SELECT COUNT(1) INTO vnPets FROM Pet WHERE idFosterHome = pnId_foster_home;
+        IF pnMax_capacity IS NULL OR pnMax_capacity < vnPets THEN
+            SET pnResult = 1030; -- c_dato_invalido
+            ROLLBACK;
+        ELSE
+            CALL pr_update_location(vnId_location, pnId_district, pcAddress, vnUpdate_result);
+            IF vnUpdate_result <> 0 THEN
+                SET pnResult = vnUpdate_result;
+                ROLLBACK;
+            ELSE
+                UPDATE FosterHome
+                SET idFosterHomeStatus = pnId_foster_home_status,
+                    maxCapacity = pnMax_capacity,
+                    requiresFoodDonation = pnRequires_food_donation
+                WHERE idFosterHome = pnId_foster_home;
 
-   pr_update_location(vnId_location, pnId_district, pcAddress, vnUpdate_result);
+                -- Reemplazar tipos aceptados
+                DELETE FROM FosterHome_x_petType WHERE idFosterHome = pnId_foster_home;
+                IF pcPet_types IS NOT NULL AND pcPet_types != '' THEN
+                    SET v_count = 1;
+                    SET v_total = CHAR_LENGTH(pcPet_types) - CHAR_LENGTH(REPLACE(pcPet_types, ',', '')) + 1;
+                    WHILE v_count <= v_total DO
+                            SET v_val = TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(pcPet_types, ',', v_count), ',', -1));
+                            INSERT INTO FosterHome_x_petType (idFosterHome, idPetType) VALUES (pnId_foster_home, CAST(v_val AS UNSIGNED));
+                            SET v_count = v_count + 1;
+                        END WHILE;
+                END IF;
 
-   IF vnUpdate_result <> c_exito THEN
-      pnResult := vnUpdate_result;                  -- pr_update_location ya hizo ROLLBACK
-      RETURN;
-   END IF;
+                -- Reemplazar tamaños aceptados
+                DELETE FROM FosterHome_x_petSize WHERE idFosterHome = pnId_foster_home;
+                IF pcPet_sizes IS NOT NULL AND pcPet_sizes != '' THEN
+                    SET v_count = 1;
+                    SET v_total = CHAR_LENGTH(pcPet_sizes) - CHAR_LENGTH(REPLACE(pcPet_sizes, ',', '')) + 1;
+                    WHILE v_count <= v_total DO
+                            SET v_val = TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(pcPet_sizes, ',', v_count), ',', -1));
+                            INSERT INTO FosterHome_x_petSize (idFosterHome, idPetSize) VALUES (pnId_foster_home, CAST(v_val AS UNSIGNED));
+                            SET v_count = v_count + 1;
+                        END WHILE;
+                END IF;
 
-   UPDATE fosterHome
-   SET idFosterHomeStatus   = pnId_foster_home_status,
-       maxCapacity          = pnMax_capacity,
-       requiresFoodDonation = pnRequires_food_donation
-   WHERE idFosterHome = pnId_foster_home;
+                COMMIT;
+            END IF;
+        END IF;
+    END IF;
+END //
 
-   -- Reemplaza los tipos aceptados
-   DELETE FROM fosterHome_x_petType
-   WHERE idFosterHome = pnId_foster_home;
-
-   IF pcPet_types IS NOT NULL THEN
-      vnCount := REGEXP_COUNT(pcPet_types, '[^,]+');
-      FOR i IN 1 .. vnCount LOOP
-         INSERT INTO fosterHome_x_petType (idFosterHome, idPetType)
-         VALUES (pnId_foster_home, TO_NUMBER(TRIM(REGEXP_SUBSTR(pcPet_types, '[^,]+', 1, i))));
-      END LOOP;
-   END IF;
-
-   -- Reemplaza los tamaños aceptados
-   DELETE FROM fosterHome_x_petSize
-   WHERE idFosterHome = pnId_foster_home;
-
-   IF pcPet_sizes IS NOT NULL THEN
-      vnCount := REGEXP_COUNT(pcPet_sizes, '[^,]+');
-      FOR i IN 1 .. vnCount LOOP
-         INSERT INTO fosterHome_x_petSize (idFosterHome, idPetSize)
-         VALUES (pnId_foster_home, TO_NUMBER(TRIM(REGEXP_SUBSTR(pcPet_sizes, '[^,]+', 1, i))));
-      END LOOP;
-   END IF;
-
-   COMMIT;
-
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN                          -- La casa cuna no existe
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-   WHEN DUP_VAL_ON_INDEX THEN                       -- Tipo o tamaño repetido en la lista
-      ROLLBACK;
-      pnResult := c_dato_duplicado;
-   WHEN eFkNoExiste THEN
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-   WHEN INVALID_NUMBER OR VALUE_ERROR THEN          -- Lista de ids mal escrita
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN eDatoNulo OR eDatoNuloUpd OR eDatoLargo OR eNumeroGrande OR eCheckViolado THEN
-      ROLLBACK;
-      pnResult := c_dato_invalido;
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_update_foster_home;
-
--- Procedimiento que elimina un reporte de la lista negra
-PROCEDURE pr_delete_blacklist (
-   pnId_blacklist  IN  NUMBER,
-   pnResult        OUT NUMBER)
-AS
+CREATE PROCEDURE pr_delete_blacklist (
+    IN pnId_blacklist INT,
+    OUT pnResult INT
+)
 BEGIN
-   pnResult := c_exito;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; SET pnResult = 9000; END;
 
-   DELETE FROM blackList
-   WHERE id = pnId_blacklist;
+    SET pnResult = 0;
+    START TRANSACTION;
 
-   IF SQL%ROWCOUNT = 0 THEN                         -- El reporte no existe
-      ROLLBACK;
-      pnResult := c_referencia_no_existe;
-      RETURN;
-   END IF;
+    DELETE FROM BlackList WHERE id = pnId_blacklist;
 
-   COMMIT;
+    IF ROW_COUNT() = 0 THEN
+        ROLLBACK;
+        SET pnResult = 1100; -- c_referencia_no_existe
+    ELSE
+        COMMIT;
+    END IF;
+END //
 
-EXCEPTION
-   WHEN OTHERS THEN
-      ROLLBACK;
-      pnResult := c_error_bd;
-END pr_delete_blacklist;
-
-END pkg_person_administration;
-/
-
--- Recompila los objetos que dependian del paquete (solo los invalidos)
-BEGIN
-   DBMS_UTILITY.COMPILE_SCHEMA(schema => USER, compile_all => FALSE);
-END;
-/
-
--- Comprobacion: todo debe decir VALID
-SHOW ERRORS PACKAGE PKG_PERSON_ADMINISTRATION
-SHOW ERRORS PACKAGE BODY PKG_PERSON_ADMINISTRATION
-SELECT object_name, object_type, status
-FROM user_objects
-WHERE object_type IN ('PACKAGE', 'PACKAGE BODY', 'TRIGGER', 'PROCEDURE', 'FUNCTION')
-AND (status <> 'VALID' OR object_name = 'PKG_PERSON_ADMINISTRATION')
-ORDER BY object_name, object_type;
+DELIMITER ;

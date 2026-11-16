@@ -14,6 +14,20 @@ import com.mycompany.bd_proyecto1.dao.memoria.MascotaDAOMemoria;
 import com.mycompany.bd_proyecto1.dao.memoria.MatchDAOMemoria;
 import com.mycompany.bd_proyecto1.dao.memoria.PersonaDAOMemoria;
 import com.mycompany.bd_proyecto1.dao.memoria.UsuarioDAOMemoria;
+import com.mycompany.bd_proyecto1.dao.mysql.AdopcionDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.AsociacionDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.BitacoraDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.CasaCunaDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.CatalogoDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.ConsultaAdicionalDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.DonacionDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.EstadisticaDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.ListaNegraDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.MascotaDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.MatchDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.ParametroDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.PersonaDAOMySQL;
+import com.mycompany.bd_proyecto1.dao.mysql.UsuarioDAOMySQL;
 import com.mycompany.bd_proyecto1.dao.oracle.AdopcionDAOOracle;
 import com.mycompany.bd_proyecto1.dao.oracle.AsociacionDAOOracle;
 import com.mycompany.bd_proyecto1.dao.oracle.BitacoraDAOOracle;
@@ -42,49 +56,69 @@ public final class Repositorios {
         /** Datos de prueba escritos en el código (solo desarrollo). */
         MEMORIA,
         /** Funciones y procedimientos de la base de datos Oracle. */
-        ORACLE
+        ORACLE,
+        /** Procedimientos de la base de datos MySQL. */
+        MYSQL
     }
 
-    /** ORACLE = base de datos real; MEMORIA = datos de prueba sin conexión. */
-    public static final FuenteDatos FUENTE_DATOS = FuenteDatos.ORACLE;
+    /** ORACLE o MYSQL = base de datos real; MEMORIA = datos de prueba sin conexión. */
+    public static final FuenteDatos FUENTE_DATOS = FuenteDatos.MYSQL;
 
     private static final boolean MEMORIA = FUENTE_DATOS == FuenteDatos.MEMORIA;
+    private static final boolean MYSQL = FUENTE_DATOS == FuenteDatos.MYSQL;
 
     // En memoria no hay triggers: los repositorios de mascotas, adopciones y
     // donaciones escriben en esta bitácora cuando cambia un campo sensible.
     private static final BitacoraDAOMemoria BITACORA_MEMORIA = MEMORIA ? new BitacoraDAOMemoria() : null;
-    private static final BitacoraDAO BITACORA = MEMORIA ? BITACORA_MEMORIA : new BitacoraDAOOracle();
+    private static final BitacoraDAO BITACORA = MEMORIA
+            ? BITACORA_MEMORIA
+            : MYSQL ? new BitacoraDAOMySQL() : new BitacoraDAOOracle();
     private static final MascotaDAO MASCOTAS = MEMORIA
-            ? new MascotaDAOMemoria(BITACORA_MEMORIA) : new MascotaDAOOracle();
-    private static final PersonaDAO PERSONAS = MEMORIA ? new PersonaDAOMemoria() : new PersonaDAOOracle();
+            ? new MascotaDAOMemoria(BITACORA_MEMORIA)
+            : MYSQL ? new MascotaDAOMySQL() : new MascotaDAOOracle();
+    private static final PersonaDAO PERSONAS = MEMORIA
+            ? new PersonaDAOMemoria()
+            : MYSQL ? new PersonaDAOMySQL() : new PersonaDAOOracle();
     // En memoria, las cuentas nuevas crean su persona en las mismas personas de la aplicación.
     private static final UsuarioDAO USUARIOS = MEMORIA
-            ? new UsuarioDAOMemoria(PERSONAS) : new UsuarioDAOOracle();
+            ? new UsuarioDAOMemoria(PERSONAS)
+            : MYSQL ? new UsuarioDAOMySQL() : new UsuarioDAOOracle();
     // En memoria, las adopciones usan las mismas mascotas para cambiarles el estado.
     private static final AdopcionDAO ADOPCIONES = MEMORIA
-            ? new AdopcionDAOMemoria(MASCOTAS, BITACORA_MEMORIA) : new AdopcionDAOOracle();
-    private static final AsociacionDAO ASOCIACIONES = MEMORIA ? new AsociacionDAOMemoria() : new AsociacionDAOOracle();
+            ? new AdopcionDAOMemoria(MASCOTAS, BITACORA_MEMORIA)
+            : MYSQL ? new AdopcionDAOMySQL() : new AdopcionDAOOracle();
+    private static final AsociacionDAO ASOCIACIONES = MEMORIA
+            ? new AsociacionDAOMemoria()
+            : MYSQL ? new AsociacionDAOMySQL() : new AsociacionDAOOracle();
     // En memoria, las donaciones de recompensa usan las mismas mascotas y asociaciones.
     private static final DonacionDAO DONACIONES = MEMORIA
-            ? new DonacionDAOMemoria(MASCOTAS, ASOCIACIONES, BITACORA_MEMORIA) : new DonacionDAOOracle();
+            ? new DonacionDAOMemoria(MASCOTAS, ASOCIACIONES, BITACORA_MEMORIA)
+            : MYSQL ? new DonacionDAOMySQL() : new DonacionDAOOracle();
     // En memoria, la lista negra usa las personas y las adopciones (calificación promedio).
     private static final ListaNegraDAO LISTA_NEGRA = MEMORIA
-            ? new ListaNegraDAOMemoria(PERSONAS, ADOPCIONES) : new ListaNegraDAOOracle();
+            ? new ListaNegraDAOMemoria(PERSONAS, ADOPCIONES)
+            : MYSQL ? new ListaNegraDAOMySQL() : new ListaNegraDAOOracle();
     private static final ParametroDAO PARAMETROS = MEMORIA
-            ? new ParametroDAOMemoria(BITACORA_MEMORIA) : new ParametroDAOOracle();
+            ? new ParametroDAOMemoria(BITACORA_MEMORIA)
+            : MYSQL ? new ParametroDAOMySQL() : new ParametroDAOOracle();
     // En memoria, los rangos de edad salen de los mismos parámetros.
     private static final EstadisticaDAO ESTADISTICAS = MEMORIA
-            ? new EstadisticaDAOMemoria(MASCOTAS, PARAMETROS) : new EstadisticaDAOOracle();
-    private static final MatchDAO MATCHES = MEMORIA ? new MatchDAOMemoria(MASCOTAS) : new MatchDAOOracle();
+            ? new EstadisticaDAOMemoria(MASCOTAS, PARAMETROS)
+            : MYSQL ? new EstadisticaDAOMySQL() : new EstadisticaDAOOracle();
+    private static final MatchDAO MATCHES = MEMORIA
+            ? new MatchDAOMemoria(MASCOTAS)
+            : MYSQL ? new MatchDAOMySQL() : new MatchDAOOracle();
     private static final CasaCunaDAO CASAS_CUNA = MEMORIA
-            ? new CasaCunaDAOMemoria(PERSONAS) : new CasaCunaDAOOracle();
+            ? new CasaCunaDAOMemoria(PERSONAS)
+            : MYSQL ? new CasaCunaDAOMySQL() : new CasaCunaDAOOracle();
     // El catálogo necesita los registros (mascotas, adopciones, casas cuna, personas y
     // asociaciones) para contar los usos de cada elemento, incluidos los distritos.
     private static final CatalogoDAO CATALOGOS = MEMORIA
             ? new CatalogoDAOMemoria(MASCOTAS, ADOPCIONES, CASAS_CUNA, PERSONAS, ASOCIACIONES)
-            : new CatalogoDAOOracle();
+            : MYSQL ? new CatalogoDAOMySQL() : new CatalogoDAOOracle();
     private static final ConsultaAdicionalDAO CONSULTAS_ADICIONALES = MEMORIA
-            ? new ConsultaAdicionalDAOMemoria(CASAS_CUNA, MASCOTAS) : new ConsultaAdicionalDAOOracle();
+            ? new ConsultaAdicionalDAOMemoria(CASAS_CUNA, MASCOTAS)
+            : MYSQL ? new ConsultaAdicionalDAOMySQL() : new ConsultaAdicionalDAOOracle();
 
     private Repositorios() {
         // Clase de utilidad: no se instancia.

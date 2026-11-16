@@ -1,5 +1,6 @@
 package com.mycompany.bd_proyecto1.dao.oracle;
 
+import com.mycompany.bd_proyecto1.dao.ConexionBD;
 import com.mycompany.bd_proyecto1.model.ItemCatalogo;
 import com.mycompany.bd_proyecto1.util.AccesoDatosException;
 import java.math.BigDecimal;

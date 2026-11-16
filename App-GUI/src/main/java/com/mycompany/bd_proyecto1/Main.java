@@ -1,7 +1,7 @@
 package com.mycompany.bd_proyecto1;
 
 import com.mycompany.bd_proyecto1.dao.Repositorios;
-import com.mycompany.bd_proyecto1.dao.oracle.ConexionBD;
+import com.mycompany.bd_proyecto1.dao.ConexionBD;
 import com.mycompany.bd_proyecto1.util.AccesoDatosException;
 import com.mycompany.bd_proyecto1.util.Alertas;
 import com.mycompany.bd_proyecto1.util.Navegador;

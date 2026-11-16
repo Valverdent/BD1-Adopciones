@@ -1,7 +1,7 @@
 package com.mycompany.bd_proyecto1.util;
 
 /**
- * Error al comunicarse con la base de datos Oracle.
+ * Error al comunicarse con la base de datos.
  *
  * @author Carlos Hidalgo
  * @since 2026-10-22

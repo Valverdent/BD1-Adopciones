@@ -1,6 +1,7 @@
 package com.mycompany.bd_proyecto1.dao.oracle;
 
 import com.mycompany.bd_proyecto1.dao.CatalogoDAO.TipoCatalogo;
+import com.mycompany.bd_proyecto1.dao.ConexionBD;
 import com.mycompany.bd_proyecto1.model.Adopcion;
 import com.mycompany.bd_proyecto1.model.AsociacionBienestar;
 import com.mycompany.bd_proyecto1.model.CasaCuna;

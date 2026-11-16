@@ -1,8 +1,8 @@
 package com.mycompany.bd_proyecto1.util;
 
 /**
- * Indica que una operación todavía no está conectada con Oracle porque el equipo de base de datos
- * no ha entregado el procedimiento o la consulta correspondiente.
+ * Indica que una operación todavía no está conectada con la base de datos porque el equipo de
+ * base de datos no ha entregado el procedimiento o la consulta correspondiente.
  *
  * @author Carlos Hidalgo
  * @since 2026-10-13
